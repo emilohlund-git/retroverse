@@ -1,5 +1,7 @@
+import { AIComponent } from "../components/AIComponent";
 import { AnimationComponent } from "../components/AnimationComponent";
 import { CollisionComponent, CollisionType } from "../components/CollisionComponent";
+import { CombatComponent } from "../components/CombatCompontent";
 import { DebugComponent } from "../components/DebugComponent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PlayerComponent } from "../components/PlayerComponent";
@@ -15,7 +17,7 @@ export class EntityFactory {
   private entity: Entity;
 
   constructor() {
-    this.entity = new Entity();
+    this.entity = new Entity('');
   }
 
   static create(): EntityFactory {
@@ -39,6 +41,11 @@ export class EntityFactory {
     return this;
   }
 
+  combat(): this {
+    this.entity.addComponent(new CombatComponent());
+    return this;
+  }
+
   spritePath(spritePath: string): this {
     const renderComponent = this.ensureRenderComponent();
     renderComponent.setImage(spritePath);
@@ -58,8 +65,8 @@ export class EntityFactory {
     return this;
   }
 
-  collision(collisionType: CollisionType): this {
-    this.entity.addComponent(new CollisionComponent(collisionType));
+  collision(collisionType: CollisionType, offsetX?: number, offsetY?: number, width?: number, height?: number): this {
+    this.entity.addComponent(new CollisionComponent(collisionType, offsetX, offsetY, width, height));
     return this;
   }
 
@@ -76,6 +83,11 @@ export class EntityFactory {
   animations(animations: Map<string, Animation>): this {
     this.entity.addComponent(new AnimationComponent(animations, 'idle'));
     return this
+  }
+
+  ai(aggroRange: number): this {
+    this.entity.addComponent(new AIComponent(aggroRange));
+    return this;
   }
 
   debug(entityManager: EntityManager, excludedComponents?: string[]): this {

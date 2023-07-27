@@ -75,22 +75,26 @@ export class CollisionSystem extends System {
     const collisionComponentB = entityB.getComponent(CollisionComponent);
     const positionComponentA = entityA.getComponent(PositionComponent);
     const positionComponentB = entityB.getComponent(PositionComponent);
+    const renderComponentA = entityA.getComponent(RenderComponent);
+    const renderComponentB = entityB.getComponent(RenderComponent);
 
     // Get dimensions and positions for both entities
-    const { width: widthA, height: heightA } = entityA.getComponent(RenderComponent);
-    const { width: widthB, height: heightB } = entityB.getComponent(RenderComponent);
+    const { width: collisionWidthA, height: collisionHeightA, offsetX: offsetXA, offsetY: offsetYA } = collisionComponentA;
+    const { width: collisionWidthB, height: collisionHeightB, offsetX: offsetXB, offsetY: offsetYB } = collisionComponentB;
+    const { width: renderWidthA, height: renderHeightA } = renderComponentA;
+    const { width: renderWidthB, height: renderHeightB } = renderComponentB;
     const { x: xA, y: yA } = positionComponentA.position;
     const { x: xB, y: yB } = positionComponentB.position;
 
     // Calculate half-width and half-height for both entities
-    const halfWidthA = widthA * 0.5;
-    const halfHeightA = heightA * 0.5;
-    const halfWidthB = widthB * 0.5;
-    const halfHeightB = heightB * 0.5;
+    const halfWidthA = (collisionWidthA || renderWidthA) * 0.5;
+    const halfHeightA = (collisionHeightA || renderHeightA) * 0.5;
+    const halfWidthB = (collisionWidthB || renderWidthB) * 0.5;
+    const halfHeightB = (collisionHeightB || renderHeightB) * 0.5;
 
     // Calculate centers of both entities
-    const centerA = { x: xA + halfWidthA, y: yA + halfHeightA };
-    const centerB = { x: xB + halfWidthB, y: yB + halfHeightB };
+    const centerA = { x: xA + halfWidthA + offsetXA, y: yA + halfHeightA + offsetYA };
+    const centerB = { x: xB + halfWidthB + offsetXB, y: yB + halfHeightB + offsetYB };
 
     // Calculate the differences in x and y between centers
     const dx = centerA.x - centerB.x;

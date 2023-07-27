@@ -14,6 +14,10 @@ export class EntityManager {
     this.entities.push(...entities);
   }
 
+  public getEntityByName(name: string): Entity | undefined {
+    return this.entities.find((e) => e.name === name);
+  }
+
   public getEntitiesByComponent<T extends Component>(component: ComponentType<T>): Entity[] {
     return this.entities.filter((value) => value.getComponent(component) !== undefined);
   }

@@ -1,7 +1,7 @@
 import { AnimationComponent } from "../components/AnimationComponent";
+import { CombatComponent } from "../components/CombatCompontent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PlayerComponent } from "../components/PlayerComponent";
-import { RenderComponent } from "../components/RenderComponent";
 import { EntityManager } from "../entities/EntityManager";
 import { System } from "./System";
 
@@ -21,7 +21,7 @@ export class InputSystem extends System {
   update(deltaTime: number, entityManager: EntityManager) {
     const player = entityManager.getEntitiesByComponent(PlayerComponent)[0];
     const movementComponent = player.getComponent(MovementComponent);
-    const renderComponent = player.getComponent(RenderComponent);
+    const combatComponent = player.getComponent(CombatComponent);
     const animationComponent = player.getComponent(AnimationComponent);
 
     if (!player) throw new Error('No player entity assigned.');
@@ -30,32 +30,26 @@ export class InputSystem extends System {
     let xDirection = 0;
     let yDirection = 0;
 
-    if (this.pressedKeys.size === 0) {
-      if (animationComponent) {
-        animationComponent.playAnimation('idle');
-        animationComponent.stopAnimation();
-        renderComponent.frameX = 0;
-        renderComponent.frameY = 0;
-      }
-    }
-
     if (this.pressedKeys.has('A')) {
       xDirection = 1
-      animationComponent?.playAnimation('walk');
-      renderComponent.flipped = true;
     }
     if (this.pressedKeys.has('D')) {
       xDirection = -1;
-      animationComponent?.playAnimation('walk');
-      renderComponent.flipped = false;
     }
     if (this.pressedKeys.has('S')) {
       yDirection = 1;
-      animationComponent?.playAnimation('walk');
     }
     if (this.pressedKeys.has('W')) {
       yDirection = -1;
-      animationComponent?.playAnimation('walk');
+    }
+
+    if (combatComponent) {
+      if (this.pressedKeys.has(' ')) {
+        combatComponent.isAttacking = true;
+        animationComponent.playAnimation('attack');
+      } else {
+        combatComponent.isAttacking = false;
+      }
     }
 
     movementComponent.direction.x = xDirection;

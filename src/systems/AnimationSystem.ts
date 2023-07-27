@@ -44,13 +44,12 @@ export class AnimationSystem extends System {
       }
 
       const currentFrameIndex = animation.frameIndices[animationComponent.currentFrameIndex];
-      console.log(currentFrameIndex);
       const spriteSheet = renderComponent.image;
 
       if (!spriteSheet) continue;
 
-      const frameWidth = animationComponent.frameWidth || renderComponent.width;
-      const frameHeight = animationComponent.frameHeight || renderComponent.height;
+      const frameWidth = renderComponent.width;
+      const frameHeight = renderComponent.height;
       const frameX = (currentFrameIndex % (spriteSheet.width / frameWidth)) * frameWidth || 0;
       const frameY = Math.floor(currentFrameIndex / (spriteSheet.width / frameWidth)) * frameHeight || 0;
 
