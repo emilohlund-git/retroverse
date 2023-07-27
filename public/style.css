@@ -1,0 +1,26 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 90vh;
+}
+
+#debug-container {
+  padding: 1em;
+  margin: 1em;
+  border-radius: 0.3em;
+  font-family: monospace;
+  display: flex;
+  flex-direction: row;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20em;
+  border: 1px solid black;
+  justify-content: start;
+}
+
+#debug-window {
+  display: flex;
+  flex-direction: column;
+}
