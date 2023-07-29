@@ -1,7 +1,9 @@
-import { AnimationComponent } from "../components/AnimationComponent";
+import { AnimationComponent, AnimationState } from "../components/AnimationComponent";
+import { CombatComponent } from "../components/CombatCompontent";
 import { RenderComponent } from "../components/RenderComponent";
 import { EntityManager } from "../entities/EntityManager";
 import { Animation } from "../sprites/Animation";
+import { SpriteData } from "../utils/SpriteSheetParser";
 import { System } from "./System";
 
 export class AnimationSystem extends System {
@@ -23,10 +25,13 @@ export class AnimationSystem extends System {
     for (const entity of entitiesWithAnimations) {
       const animationComponent = entity.getComponent(AnimationComponent);
       const renderComponent = entity.getComponent(RenderComponent);
+      const combatComponent = entity.getComponent(CombatComponent);
 
       if (!animationComponent.isPlaying || !renderComponent || !animationComponent.currentAnimation) {
         continue;
       }
+
+      animationComponent.state = AnimationState.Playing;
 
       const animation = animationComponent.animations.get(animationComponent.currentAnimation);
 
@@ -39,33 +44,36 @@ export class AnimationSystem extends System {
 
       if (animationComponent.currentAnimationTime >= frameDuration) {
         const frameIndexIncrement = Math.floor(animationComponent.currentAnimationTime / frameDuration);
-        animationComponent.currentFrameIndex = (animationComponent.currentFrameIndex + frameIndexIncrement) % animation.frameIndices.length;
+        const totalFrames = animation.frames.length;
+
+        if (!animation.loop) {
+          if (animationComponent.currentFrameIndex + frameIndexIncrement >= totalFrames - 1) {
+            animationComponent.state = AnimationState.Finished;
+
+            if (animationComponent.currentAnimation === "attack" ||
+              animationComponent.currentAnimation === "attack-up") {
+              combatComponent.isAttacking = false;
+            }
+
+            if (combatComponent.isHurt) {
+              combatComponent.isHurt = false;
+            }
+
+            continue;
+          }
+        }
+
+        animationComponent.currentFrameIndex = (animationComponent.currentFrameIndex + frameIndexIncrement) % animation.frames.length;
         animationComponent.currentAnimationTime %= frameDuration;
       }
-
-      const currentFrameIndex = animation.frameIndices[animationComponent.currentFrameIndex];
-      const spriteSheet = renderComponent.image;
-
-      if (!spriteSheet) continue;
-
-      const frameWidth = renderComponent.width;
-      const frameHeight = renderComponent.height;
-      const frameX = (currentFrameIndex % (spriteSheet.width / frameWidth)) * frameWidth || 0;
-      const frameY = Math.floor(currentFrameIndex / (spriteSheet.width / frameWidth)) * frameHeight || 0;
-
-      // Update RenderComponent to use the correct frame
-      renderComponent.frameX = frameX;
-      renderComponent.frameY = frameY;
-      renderComponent.width = frameWidth;
-      renderComponent.height = frameHeight;
     }
   }
 
   render() {/* */ }
 
-  getCurrentFrameIndex(): number {
+  getCurrentSpriteData(): SpriteData | undefined {
     const animation = this.animations.get(this.currentAnimation);
-    return animation ? animation.frameIndices[this.currentFrameIndex] : 0;
+    return animation ? animation.frames[this.currentFrameIndex] : undefined;
   }
 
   stopAnimation() {

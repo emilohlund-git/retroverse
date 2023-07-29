@@ -1,5 +1,5 @@
 import { AIComponent } from "../components/AIComponent";
-import { AnimationComponent } from "../components/AnimationComponent";
+import { AnimationComponent, AnimationState } from "../components/AnimationComponent";
 import { CollisionComponent, CollisionType } from "../components/CollisionComponent";
 import { CombatComponent } from "../components/CombatCompontent";
 import { DebugComponent } from "../components/DebugComponent";
@@ -11,6 +11,7 @@ import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { Animation } from "../sprites/Animation";
+import { SpriteData } from "./SpriteSheetParser";
 import { Vector2D } from "./Vector2D";
 
 export class EntityFactory {
@@ -46,9 +47,9 @@ export class EntityFactory {
     return this;
   }
 
-  spritePath(spritePath: string): this {
+  spriteData(spriteData: SpriteData): this {
     const renderComponent = this.ensureRenderComponent();
-    renderComponent.setImage(spritePath);
+    renderComponent.spriteData = spriteData;
     return this;
   }
 
@@ -58,10 +59,8 @@ export class EntityFactory {
     return this;
   }
 
-  solid(solid: boolean = false): this {
-    if (solid) {
-      this.entity.addComponent(new SolidComponent());
-    }
+  solid(spriteData: SpriteData): this {
+    this.entity.addComponent(new SolidComponent(spriteData));
     return this;
   }
 
@@ -81,7 +80,7 @@ export class EntityFactory {
   }
 
   animations(animations: Map<string, Animation>): this {
-    this.entity.addComponent(new AnimationComponent(animations, 'idle'));
+    this.entity.addComponent(new AnimationComponent(animations, "", 0, 10, false, 0, 0, AnimationState.Finished));
     return this
   }
 
@@ -102,7 +101,7 @@ export class EntityFactory {
   private ensureRenderComponent(): RenderComponent {
     let renderComponent = this.entity.getComponent(RenderComponent);
     if (!renderComponent) {
-      renderComponent = this.entity.addComponent(new RenderComponent(0, 0));
+      renderComponent = this.entity.addComponent(new RenderComponent(0, 0, {} as SpriteData));
     }
     return renderComponent;
   }

@@ -22,7 +22,7 @@ export class EntityManager {
     return this.entities.filter((value) => value.getComponent(component) !== undefined);
   }
 
-  public getEntitiesByComponents<T extends Component[]>(components: ComponentType<T>[]): Entity[] {
+  public getEntitiesByComponents(components: any[]): Entity[] {
     return this.entities.filter((value) => components.every((c) => value.getComponent(c) !== undefined));
   }
 }

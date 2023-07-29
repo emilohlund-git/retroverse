@@ -36,7 +36,7 @@ export class ChasePlayer implements BehaviorNode {
       const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
 
       if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent)) {
-        if (distanceToPlayer === 0) {
+        if (distanceToPlayer < 10) {
           aiComponent.isChasing = false;
           movementComponent.direction.x = 0;
           movementComponent.direction.y = 0;
@@ -57,6 +57,8 @@ export class ChasePlayer implements BehaviorNode {
   }
 
   private hasLineOfSight(entityManager: EntityManager, entityPosition: PositionComponent, playerPosition: PositionComponent, aiComponent: AIComponent): boolean {
+    const obstacles = entityManager.getEntitiesByComponents([SolidComponent, CollisionComponent]);
+
     const directionX = playerPosition.position.x - entityPosition.position.x;
     const directionY = playerPosition.position.y - entityPosition.position.y;
     const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
@@ -71,10 +73,10 @@ export class ChasePlayer implements BehaviorNode {
       const stepX = entityPosition.position.x + intervalFactor * normalizedDirectionX * distanceToPlayer;
       const stepY = entityPosition.position.y + intervalFactor * normalizedDirectionY * distanceToPlayer;
 
-      const obstacles = entityManager.getEntitiesByComponent(SolidComponent);
       for (const obstacleEntity of obstacles) {
         const obstaclePosition = obstacleEntity.getComponent(PositionComponent);
         const collisionComponent = obstacleEntity.getComponent(CollisionComponent);
+        if (!collisionComponent) continue;
 
         if (this.isObstacleBetweenPoints(entityPosition.position, { x: stepX, y: stepY }, obstaclePosition.position, collisionComponent.collisionDetails)) {
           aiComponent.hasLineOfSight = false;

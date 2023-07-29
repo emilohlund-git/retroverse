@@ -30,25 +30,28 @@ export class InputSystem extends System {
     let xDirection = 0;
     let yDirection = 0;
 
-    if (this.pressedKeys.has('A')) {
-      xDirection = 1
-    }
-    if (this.pressedKeys.has('D')) {
-      xDirection = -1;
-    }
-    if (this.pressedKeys.has('S')) {
-      yDirection = 1;
-    }
-    if (this.pressedKeys.has('W')) {
-      yDirection = -1;
+    if (!combatComponent.isAttacking) {
+      if (this.pressedKeys.has('A')) {
+        xDirection = 1
+      }
+      if (this.pressedKeys.has('D')) {
+        xDirection = -1;
+      }
+      if (this.pressedKeys.has('S')) {
+        yDirection = 1;
+      }
+      if (this.pressedKeys.has('W')) {
+        yDirection = -1;
+      }
     }
 
     if (combatComponent) {
-      if (this.pressedKeys.has(' ')) {
+      if (this.pressedKeys.has(' ') && !combatComponent.attackInitiated) {
+        animationComponent.currentFrameIndex = 0;
+        combatComponent.attackInitiated = true;
         combatComponent.isAttacking = true;
-        animationComponent.playAnimation('attack');
-      } else {
-        combatComponent.isAttacking = false;
+      } else if (!this.pressedKeys.has(" ")) {
+        combatComponent.attackInitiated = false;
       }
     }
 

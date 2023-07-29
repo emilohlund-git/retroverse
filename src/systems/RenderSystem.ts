@@ -1,15 +1,16 @@
 import { AnimationComponent } from "../components/AnimationComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { RenderComponent } from "../components/RenderComponent";
+import { SolidComponent } from "../components/SolidComponent";
 import { EntityManager } from "../entities/EntityManager";
 import { System } from "./System";
 
 export class RenderSystem extends System {
   private canvas = document.createElement('canvas');
   private ctx: CanvasRenderingContext2D;
-  private cameraWidth: number = 70;
-  private cameraHeight: number = 50;
-  private zoomFactor: number = 6;
+  private cameraWidth: number = 100;
+  private cameraHeight: number = 90;
+  private zoomFactor: number = 4;
 
   constructor(width: number, height: number) {
     super();
@@ -31,10 +32,8 @@ export class RenderSystem extends System {
     const playerEntity = entityManager.getEntityByName('player');
     if (!playerEntity) return;
 
-    // Get the player's position
     const playerPositionComponent = playerEntity.getComponent(PositionComponent);
 
-    // Calculate the camera position to center it on the player
     const cameraX = playerPositionComponent.position.x - this.cameraWidth / 2;
     const cameraY = playerPositionComponent.position.y - this.cameraHeight / 2;
 
@@ -45,81 +44,72 @@ export class RenderSystem extends System {
     this.ctx.imageSmoothingEnabled = false;
     this.ctx.scale(this.zoomFactor, this.zoomFactor); // Apply zoom
 
-    const renderEntities = entityManager.getEntitiesByComponent(RenderComponent);
+    const animationEntities = entityManager.getEntitiesByComponent(AnimationComponent);
+    const solidEntities = entityManager.getEntitiesByComponent(SolidComponent);
 
-    for (const entity of renderEntities) {
+    for (const entity of solidEntities) {
       const renderComponent = entity.getComponent(RenderComponent);
       const positionComponent = entity.getComponent(PositionComponent);
+      const solidComponent = entity.getComponent(SolidComponent);
 
-      // Adjust the rendering positions based on the camera position
       const adjustedX = (positionComponent.position.x - cameraX);
       const adjustedY = (positionComponent.position.y - cameraY);
 
-      if (renderComponent.image) {
-        if (renderComponent.tiled) {
-          for (let i = adjustedX; i < renderComponent.width + adjustedX; i += 32) {
-            for (let j = adjustedY; j < renderComponent.height + adjustedY; j += 32) {
-              this.ctx.drawImage(renderComponent.image, 0, 0, 32, 32, i, j, 32, 32);
-            }
-          }
+      this.ctx.drawImage(
+        solidComponent.spriteData.image,
+        solidComponent.spriteData.x,
+        solidComponent.spriteData.y,
+        renderComponent.width,
+        renderComponent.height,
+        adjustedX,
+        adjustedY,
+        renderComponent.width,
+        renderComponent.height,
+      );
+    }
+
+    for (const entity of animationEntities) {
+      const renderComponent = entity.getComponent(RenderComponent);
+      const positionComponent = entity.getComponent(PositionComponent);
+      const animationComponent = entity.getComponent(AnimationComponent);
+
+      if (animationComponent) {
+        const animation = animationComponent.animations.get(animationComponent.currentAnimation);
+        const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
+        if (!currentAnimationFrame) return;
+
+        const adjustedX = (positionComponent.position.x - cameraX);
+        const adjustedY = (positionComponent.position.y - cameraY);
+
+        if (renderComponent.flipped) {
+          this.ctx.save();
+          this.ctx.scale(-1, 1);
+          this.ctx.drawImage(
+            currentAnimationFrame.image,
+            currentAnimationFrame.x,
+            currentAnimationFrame.y,
+            renderComponent.width,
+            renderComponent.height,
+            -adjustedX - renderComponent.width,
+            adjustedY,
+            renderComponent.width,
+            renderComponent.height,
+          );
+          this.ctx.restore();
         } else {
-          const animationComponent = entity.getComponent(AnimationComponent);
-
-          if (animationComponent) {
-            if (animationComponent.currentAnimation) {
-              const spriteSheet = renderComponent.image;
-              const frameWidth = renderComponent.width;
-              const frameHeight = renderComponent.height;
-              const frameX = renderComponent.frameX;
-              const frameY = renderComponent.frameY;
-
-              if (renderComponent.flipped) {
-                this.ctx.save();
-                this.ctx.scale(-1, 1);
-                this.ctx.drawImage(
-                  spriteSheet,
-                  frameX,
-                  frameY,
-                  frameWidth,
-                  frameHeight,
-                  -adjustedX - frameWidth, // Negate position and width
-                  adjustedY,
-                  frameWidth,
-                  frameHeight
-                );
-                this.ctx.restore();
-              } else {
-                // No flip, draw as usual
-                this.ctx.drawImage(
-                  spriteSheet,
-                  frameX,
-                  frameY,
-                  frameWidth,
-                  frameHeight,
-                  adjustedX,
-                  adjustedY,
-                  frameWidth,
-                  frameHeight
-                );
-              }
-            }
-          } else {
-            this.ctx.drawImage(
-              renderComponent.image,
-              0,
-              0,
-              32,
-              32,
-              adjustedX,
-              adjustedY,
-              renderComponent.width,
-              renderComponent.height
-            );
-          }
+          // No flip, draw as usual
+          this.ctx.drawImage(
+            currentAnimationFrame.image,
+            currentAnimationFrame.x,
+            currentAnimationFrame.y,
+            renderComponent.width,
+            renderComponent.height,
+            adjustedX,
+            adjustedY,
+            renderComponent.width,
+            renderComponent.height,
+          );
         }
-      } else {
-        this.ctx.fillStyle = "gray";
-        this.ctx.fillRect(adjustedX, adjustedY, renderComponent.width, renderComponent.height);
       }
     }
   }

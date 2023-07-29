@@ -1,6 +1,11 @@
 import { Animation } from "../sprites/Animation";
 import { Component } from "./Component";
 
+export enum AnimationState {
+  Playing,
+  Finished,
+}
+
 export class AnimationComponent extends Component {
   constructor(
     public animations: Map<string, Animation> = new Map(),
@@ -10,6 +15,7 @@ export class AnimationComponent extends Component {
     public isPlaying: boolean = false,
     public frameWidth: number = 32,
     public frameHeight: number = 32,
+    public state: AnimationState,
   ) {
     super();
   }
@@ -29,5 +35,6 @@ export class AnimationComponent extends Component {
     this.isPlaying = false;
     this.currentFrameIndex = 0;
     this.currentAnimationTime = 0;
+    this.currentAnimation = '';
   }
 }

@@ -32,6 +32,7 @@ export class CollisionSystem extends System {
 
   private handleBoxCollision(entity: Entity, collisionEntities: Entity[]) {
     const collisionComponent = entity.getComponent(CollisionComponent);
+    if (!collisionComponent) return;
 
     collisionComponent.collisionDetails = {
       top: false,
@@ -43,6 +44,8 @@ export class CollisionSystem extends System {
     for (const otherEntity of collisionEntities) {
       if (otherEntity === entity) continue;
       const otherCollisionComponent = otherEntity.getComponent(CollisionComponent);
+      if (!otherCollisionComponent) continue;
+
       const shapeB = otherCollisionComponent.collisionType;
 
       if (shapeB === CollisionType.BOX) {
