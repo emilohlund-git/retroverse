@@ -10,6 +10,10 @@ export class Entity {
     return component;
   }
 
+  public hasComponent(componentName: string): boolean {
+    return this.components.has(componentName);
+  }
+
   public getComponent<T extends Component>(componentName: string): T | undefined {
     return this.components.get(componentName) as T | undefined;
   }

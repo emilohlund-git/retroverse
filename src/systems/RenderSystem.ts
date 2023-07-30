@@ -1,15 +1,17 @@
 import { AnimationComponent } from "../components/AnimationComponent";
 import { CombatComponent } from "../components/CombatCompontent";
+import { InventoryComponent } from "../components/InventoryComponent";
 import { LayerComponent } from "../components/LayerComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { RenderComponent } from "../components/RenderComponent";
+import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { Vector2D } from "../utils/Vector2D";
 import { System } from "./System";
 
 export class RenderSystem extends System {
-  private animationRenderingBatches: Map<number, Entity[]> = new Map();
+  private renderingBatches: Map<number, Entity[]> = new Map();
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private cameraWidth: number = 100;
@@ -42,9 +44,10 @@ export class RenderSystem extends System {
 
     const playerPositionComponent = playerEntity.getComponent<PositionComponent>("PositionComponent");
 
-    this.updateAnimationRenderingBatches(entityManager);
     if (playerPositionComponent) {
-      this.renderAnimationEntities(playerPositionComponent.position);
+      this.updateRenderingBatches(entityManager);
+      this.renderEntities(playerPositionComponent.position);
+      this.renderDroppedItems(playerPositionComponent.position, entityManager);
     }
   }
 
@@ -54,34 +57,42 @@ export class RenderSystem extends System {
     this.ctx.scale(this.zoomFactor, this.zoomFactor);
   }
 
-  private updateAnimationRenderingBatches(entityManager: EntityManager) {
-    this.animationRenderingBatches.clear();
+  private updateRenderingBatches(entityManager: EntityManager) {
+    this.renderingBatches.clear();
 
     const animationEntities = entityManager.getEntitiesByComponent("AnimationComponent");
+    const staticEntities = entityManager.getEntitiesByComponents(["SolidComponent", "RenderComponent"]);
 
-    for (const entity of animationEntities) {
+    for (const entity of [...animationEntities, ...staticEntities]) {
       const layerComponent = entity.getComponent<LayerComponent>("LayerComponent");
       const layer = layerComponent ? layerComponent.layer : 0;
 
-      if (!this.animationRenderingBatches.has(layer)) {
-        this.animationRenderingBatches.set(layer, []);
+      if (!this.renderingBatches.has(layer)) {
+        this.renderingBatches.set(layer, []);
       }
 
-      this.animationRenderingBatches.get(layer)?.push(entity);
+      this.renderingBatches.get(layer)?.push(entity);
     }
   }
 
-  private renderAnimationEntities(playerPosition: Vector2D) {
-    const sortedBatches = Array.from(this.animationRenderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
+  private renderEntities(playerPosition: Vector2D) {
+    const sortedBatches = Array.from(this.renderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
 
     for (const [_, entities] of sortedBatches) {
       for (const entity of entities) {
-        this.renderEntity(entity, playerPosition);
+        const positionComponent = entity.getComponent<PositionComponent>("PositionComponent");
+        if (!positionComponent) continue;
+
+        if (entity.hasComponent("AnimationComponent")) {
+          this.renderAnimationEntity(entity, playerPosition);
+        } else {
+          this.renderStaticEntity(entity, playerPosition);
+        }
       }
     }
   }
 
-  private renderEntity(entity: Entity, playerPosition: Vector2D) {
+  private renderAnimationEntity(entity: Entity, playerPosition: Vector2D) {
     const renderComponent = entity.getComponent<RenderComponent>("RenderComponent");
     if (!renderComponent) return;
     const positionComponent = entity.getComponent<PositionComponent>("PositionComponent");
@@ -137,6 +148,65 @@ export class RenderSystem extends System {
         );
       }
     }
+  }
+
+  private renderDroppedItems(playerPosition: Vector2D, entityManager: EntityManager) {
+    const world = entityManager.getEntityByName("world-inventory");
+    if (!world) return;
+
+    const worldInventory = world?.getComponent<InventoryComponent>("InventoryComponent");
+
+    const positionComponent = world.getComponent<PositionComponent>("PositionComponent");
+    if (!worldInventory || !positionComponent) return;
+
+    const cameraX = playerPosition.x - this.cameraWidth / 2;
+    const cameraY = playerPosition.y - this.cameraHeight / 2;
+
+    for (const item of worldInventory.items) {
+      const adjustedX = (item.dropPosition.x - cameraX);
+      const adjustedY = (item.dropPosition.y - cameraY);
+
+      if (item.isDropped) {
+        this.ctx.drawImage(
+          item.icon.image,
+          item.icon.x,
+          item.icon.y,
+          item.icon.width,
+          item.icon.height,
+          adjustedX,
+          adjustedY + 15,
+          6,
+          6,
+        );
+      }
+    }
+  }
+
+  private renderStaticEntity(entity: Entity, playerPosition: Vector2D) {
+    const positionComponent = entity.getComponent<PositionComponent>("PositionComponent");
+    const renderComponent = entity.getComponent<RenderComponent>("RenderComponent");
+    const solidComponent = entity.getComponent<SolidComponent>("SolidComponent");
+
+    if (!solidComponent || !positionComponent || !renderComponent) return;
+
+    const { position } = positionComponent;
+
+    const cameraX = playerPosition.x - this.cameraWidth / 2;
+    const cameraY = playerPosition.y - this.cameraHeight / 2;
+    const adjustedX = (position.x - cameraX);
+    const adjustedY = (position.y - cameraY);
+
+    this.ctx.drawImage(
+      solidComponent.spriteData.image,
+      solidComponent.spriteData.x,
+      solidComponent.spriteData.y,
+      renderComponent.width,
+      renderComponent.height,
+      adjustedX,
+      adjustedY,
+      renderComponent.width,
+      renderComponent.height,
+    );
   }
 
   render(): void {

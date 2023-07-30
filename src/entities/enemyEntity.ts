@@ -29,11 +29,11 @@ export function createEnemyEntity(entityManager: EntityManager, name: string, po
     .ai(50)
     .animations(animations)
     .inventory()
-    .layer(0)
+    .layer(3)
     .build();
 
   const inventory = enemyEntity.getComponent<InventoryComponent>("InventoryComponent");
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1; i++) {
     inventory?.addItem({ ...cheese });
     inventory?.addItem({ ...key });
     inventory?.addItem({ ...blueRing });

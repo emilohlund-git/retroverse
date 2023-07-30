@@ -258,7 +258,7 @@
   var blueRingSprite = SpriteSheetParser.getSprite("items", "all-items", 4, 1);
   var greenRingSprite = SpriteSheetParser.getSprite("items", "all-items", 5, 1);
   var redPotionSprite = SpriteSheetParser.getSprite("items", "all-items", 1, 0);
-  var cheese = new ItemComponent("Cheese", "A stinky, stinky, stinky cheese. Smells like Boob's butt.", cheeseSprite);
+  var cheese = new ItemComponent("Cheese", "A cheese.", cheeseSprite);
   var key = new ItemComponent("Key", "A key", keySprite);
   var greenRing = new ItemComponent("Green Ring", "A green ring.", greenRingSprite);
   var blueRing = new ItemComponent("Blue Ring", "A blue ring.", blueRingSprite);
@@ -443,6 +443,9 @@
       this.components.set(componentName, component);
       return component;
     }
+    hasComponent(componentName) {
+      return this.components.has(componentName);
+    }
     getComponent(componentName) {
       return this.components.get(componentName);
     }
@@ -550,9 +553,9 @@
   animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
   animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
   function createEnemyEntity(entityManager2, name, positionX, positionY) {
-    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).inventory().layer(0).build();
+    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).inventory().layer(3).build();
     const inventory = enemyEntity.getComponent("InventoryComponent");
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 1; i++) {
       inventory?.addItem({ ...cheese });
       inventory?.addItem({ ...key });
       inventory?.addItem({ ...blueRing });
@@ -659,7 +662,7 @@
   animations2.set(playerDeathAnimation.name, playerDeathAnimation);
   var excludedComponents = ["DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
   function createPlayerEntity(entityManager2) {
-    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).player().combat().animations(animations2).layer(1).inventory().debug(entityManager2, excludedComponents).build();
+    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 0, 0, 16, 16).player().combat().animations(animations2).layer(2).inventory().debug(entityManager2, excludedComponents).build();
     entityManager2.addEntity(playerEntity);
   }
 
@@ -671,31 +674,33 @@
     ],
     // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
     data: [
-      [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 3, 1]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 1, 1], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 1, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
-      [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 3, 3]]
+      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 3, 1]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 0, 1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 1], [0, 1, 1, 2, 1], [0, 1, 1, 2, 1], [3, 1, 1, 3, 1], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 1], [0, 1, 1, 7, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 3], [0, 1, 1, 7, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [3, 1, 1, 3, 3], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
+      [[0, 1, 1, 2, 3], [0, 1, 1, 4, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 3, 3]]
     ]
   };
 
@@ -1385,134 +1390,6 @@
     }
   };
 
-  // src/systems/LevelSystem.ts
-  var LevelSystem = class extends System {
-    constructor(width, height) {
-      super();
-      this.staticRenderingBatches = /* @__PURE__ */ new Map();
-      this.cameraWidth = 100;
-      this.cameraHeight = 90;
-      this.zoomFactor = 4;
-      const viewport = document.getElementById("viewport");
-      if (!viewport)
-        throw new Error("Viewport missing.");
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      if (!canvas)
-        throw new Error("Failed to initialize game canvas.");
-      const ctx = canvas.getContext("2d");
-      if (!ctx)
-        throw new Error("Failed to initialize canvas context.");
-      this.ctx = ctx;
-      this.canvas = canvas;
-      viewport.appendChild(canvas);
-    }
-    preload() {
-    }
-    update(_, entityManager2) {
-      this.render();
-      this.updateCamera(entityManager2);
-      const playerEntity = entityManager2.getEntityByName("player");
-      if (!playerEntity)
-        return;
-      const playerPositionComponent = playerEntity.getComponent("PositionComponent");
-      if (!playerPositionComponent)
-        return;
-      const { position: playerPosition } = playerPositionComponent;
-      this.updateStaticRenderingBatches(entityManager2);
-      this.renderStaticLevelElements(playerPosition);
-      this.renderDroppedItems(playerPosition, entityManager2);
-    }
-    updateCamera(entityManager2) {
-      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-      this.ctx.imageSmoothingEnabled = false;
-      this.ctx.scale(this.zoomFactor, this.zoomFactor);
-    }
-    updateStaticRenderingBatches(entityManager2) {
-      this.staticRenderingBatches.clear();
-      const staticEntities = entityManager2.getEntitiesByComponents(["SolidComponent", "RenderComponent"]);
-      for (const entity of staticEntities) {
-        const layerComponent = entity.getComponent("LayerComponent");
-        if (!layerComponent)
-          continue;
-        const layer = layerComponent ? layerComponent.layer : 0;
-        if (!this.staticRenderingBatches.has(layer)) {
-          this.staticRenderingBatches.set(layer, []);
-        }
-        this.staticRenderingBatches.get(layer)?.push(entity);
-      }
-    }
-    renderStaticLevelElements(playerPosition) {
-      const sortedBatches = Array.from(this.staticRenderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
-      for (const [_, entities] of sortedBatches) {
-        for (const entity of entities) {
-          this.renderStaticEntity(entity, playerPosition);
-        }
-      }
-    }
-    renderDroppedItems(playerPosition, entityManager2) {
-      const world = entityManager2.getEntityByName("world-inventory");
-      if (!world)
-        return;
-      const worldInventory2 = world?.getComponent("InventoryComponent");
-      const positionComponent = world.getComponent("PositionComponent");
-      if (!worldInventory2 || !positionComponent)
-        return;
-      const cameraX = playerPosition.x - this.cameraWidth / 2;
-      const cameraY = playerPosition.y - this.cameraHeight / 2;
-      for (const item of worldInventory2.items) {
-        const adjustedX = item.dropPosition.x - cameraX;
-        const adjustedY = item.dropPosition.y - cameraY;
-        if (item.isDropped) {
-          this.ctx.drawImage(
-            item.icon.image,
-            item.icon.x,
-            item.icon.y,
-            item.icon.width,
-            item.icon.height,
-            adjustedX,
-            adjustedY + 15,
-            6,
-            6
-          );
-        }
-      }
-    }
-    renderStaticEntity(entity, playerPosition) {
-      const positionComponent = entity.getComponent("PositionComponent");
-      const renderComponent = entity.getComponent("RenderComponent");
-      const solidComponent = entity.getComponent("SolidComponent");
-      if (!solidComponent || !positionComponent || !renderComponent)
-        return;
-      const { position } = positionComponent;
-      const cameraX = playerPosition.x - this.cameraWidth / 2;
-      const cameraY = playerPosition.y - this.cameraHeight / 2;
-      const adjustedX = position.x - cameraX;
-      const adjustedY = position.y - cameraY;
-      this.ctx.drawImage(
-        solidComponent.spriteData.image,
-        solidComponent.spriteData.x,
-        solidComponent.spriteData.y,
-        renderComponent.width,
-        renderComponent.height,
-        adjustedX,
-        adjustedY,
-        renderComponent.width,
-        renderComponent.height
-      );
-    }
-    render() {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-    get height() {
-      return this.canvas.height;
-    }
-    get width() {
-      return this.canvas.width;
-    }
-  };
-
   // src/sprites/AnimationController.ts
   var AnimationController = class {
     static {
@@ -1641,7 +1518,7 @@
   var RenderSystem = class extends System {
     constructor(width, height) {
       super();
-      this.animationRenderingBatches = /* @__PURE__ */ new Map();
+      this.renderingBatches = /* @__PURE__ */ new Map();
       this.cameraWidth = 100;
       this.cameraHeight = 90;
       this.zoomFactor = 4;
@@ -1669,9 +1546,10 @@
       if (!playerEntity)
         return;
       const playerPositionComponent = playerEntity.getComponent("PositionComponent");
-      this.updateAnimationRenderingBatches(entityManager2);
       if (playerPositionComponent) {
-        this.renderAnimationEntities(playerPositionComponent.position);
+        this.updateRenderingBatches(entityManager2);
+        this.renderEntities(playerPositionComponent.position);
+        this.renderDroppedItems(playerPositionComponent.position, entityManager2);
       }
     }
     updateCamera(entityManager2) {
@@ -1679,27 +1557,35 @@
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.scale(this.zoomFactor, this.zoomFactor);
     }
-    updateAnimationRenderingBatches(entityManager2) {
-      this.animationRenderingBatches.clear();
+    updateRenderingBatches(entityManager2) {
+      this.renderingBatches.clear();
       const animationEntities = entityManager2.getEntitiesByComponent("AnimationComponent");
-      for (const entity of animationEntities) {
+      const staticEntities = entityManager2.getEntitiesByComponents(["SolidComponent", "RenderComponent"]);
+      for (const entity of [...animationEntities, ...staticEntities]) {
         const layerComponent = entity.getComponent("LayerComponent");
         const layer = layerComponent ? layerComponent.layer : 0;
-        if (!this.animationRenderingBatches.has(layer)) {
-          this.animationRenderingBatches.set(layer, []);
+        if (!this.renderingBatches.has(layer)) {
+          this.renderingBatches.set(layer, []);
         }
-        this.animationRenderingBatches.get(layer)?.push(entity);
+        this.renderingBatches.get(layer)?.push(entity);
       }
     }
-    renderAnimationEntities(playerPosition) {
-      const sortedBatches = Array.from(this.animationRenderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
+    renderEntities(playerPosition) {
+      const sortedBatches = Array.from(this.renderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
       for (const [_, entities] of sortedBatches) {
         for (const entity of entities) {
-          this.renderEntity(entity, playerPosition);
+          const positionComponent = entity.getComponent("PositionComponent");
+          if (!positionComponent)
+            continue;
+          if (entity.hasComponent("AnimationComponent")) {
+            this.renderAnimationEntity(entity, playerPosition);
+          } else {
+            this.renderStaticEntity(entity, playerPosition);
+          }
         }
       }
     }
-    renderEntity(entity, playerPosition) {
+    renderAnimationEntity(entity, playerPosition) {
       const renderComponent = entity.getComponent("RenderComponent");
       if (!renderComponent)
         return;
@@ -1753,6 +1639,57 @@
         }
       }
     }
+    renderDroppedItems(playerPosition, entityManager2) {
+      const world = entityManager2.getEntityByName("world-inventory");
+      if (!world)
+        return;
+      const worldInventory2 = world?.getComponent("InventoryComponent");
+      const positionComponent = world.getComponent("PositionComponent");
+      if (!worldInventory2 || !positionComponent)
+        return;
+      const cameraX = playerPosition.x - this.cameraWidth / 2;
+      const cameraY = playerPosition.y - this.cameraHeight / 2;
+      for (const item of worldInventory2.items) {
+        const adjustedX = item.dropPosition.x - cameraX;
+        const adjustedY = item.dropPosition.y - cameraY;
+        if (item.isDropped) {
+          this.ctx.drawImage(
+            item.icon.image,
+            item.icon.x,
+            item.icon.y,
+            item.icon.width,
+            item.icon.height,
+            adjustedX,
+            adjustedY + 15,
+            6,
+            6
+          );
+        }
+      }
+    }
+    renderStaticEntity(entity, playerPosition) {
+      const positionComponent = entity.getComponent("PositionComponent");
+      const renderComponent = entity.getComponent("RenderComponent");
+      const solidComponent = entity.getComponent("SolidComponent");
+      if (!solidComponent || !positionComponent || !renderComponent)
+        return;
+      const { position } = positionComponent;
+      const cameraX = playerPosition.x - this.cameraWidth / 2;
+      const cameraY = playerPosition.y - this.cameraHeight / 2;
+      const adjustedX = position.x - cameraX;
+      const adjustedY = position.y - cameraY;
+      this.ctx.drawImage(
+        solidComponent.spriteData.image,
+        solidComponent.spriteData.x,
+        solidComponent.spriteData.y,
+        renderComponent.width,
+        renderComponent.height,
+        adjustedX,
+        adjustedY,
+        renderComponent.width,
+        renderComponent.height
+      );
+    }
     render() {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
@@ -1768,7 +1705,6 @@
   SpriteSheetParser.extractSprites("dungeon-tiles", "floor-tiles", 8, 8, 56, 16, "./assets/tiles/MiniFantasy_DungeonFloorTiles.png");
   SpriteSheetParser.extractSprites("dungeon-tiles", "wall-tiles", 8, 8, 56, 112, "./assets/tiles/MiniFantasy_DungeonWallTiles.png");
   var entityManager = new EntityManager();
-  var levelSystem = new LevelSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
   var renderSystem = new RenderSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
   var inputSystem = new InputSystem();
   var movementSystem = new MovementSystem();
@@ -1777,8 +1713,8 @@
   var combatSystem = new CombatSystem();
   var inventorySystem = new InventorySystem();
   createPlayerEntity(entityManager);
-  for (let i = 1; i < 3; i++) {
-    createEnemyEntity(entityManager, `enemy${i}`, i / 2, i);
+  for (let i = 1; i < 2; i++) {
+    createEnemyEntity(entityManager, `enemy${i}`, 100, i);
   }
   var worldInventory = EntityFactory.create().name("world-inventory").position(new Vector2D(0, 0)).inventory(200).build();
   entityManager.addEntity(worldInventory);
@@ -1786,11 +1722,11 @@
     const entitiesToAdd = [];
     for (let i = 0; i < levelData.length; i++) {
       for (let j = 0; j < levelData[i].length; j++) {
-        const [spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
+        const [layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
         const spriteSheet = spriteSheets[spriteSheetIndex];
-        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(0).solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)).tiled(true);
-        if (spriteSheet.includes("wall")) {
-          tileEntity.collision("box" /* BOX */, i === 0 ? -11 : 11, j === 0 ? -11 : 11);
+        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(layer).solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)).tiled(true);
+        if (hasCollision === 1) {
+          tileEntity.collision("box" /* BOX */, -2, -2, 0, 0);
         }
         entitiesToAdd.push(tileEntity.build());
       }
@@ -1804,7 +1740,6 @@
     animationSystem,
     inputSystem,
     movementSystem,
-    levelSystem,
     renderSystem,
     inventorySystem,
     collisionSystem,
