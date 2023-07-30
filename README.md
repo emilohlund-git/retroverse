@@ -10,6 +10,13 @@ Welcome to RetroVerse! This is a passion project real time rogue-like game engin
 
 RetroVerse is a passion project inspired by the golden era of gaming. It aims to provide a delightful gaming experience to both veteran gamers and newcomers. Immerse yourself in the retro aesthetics, challenging levels, and engaging storylines that will keep you hooked for hours.
 
+## 🎮 Gameplay
+
+Check out some gameplay examples from the current implementation of the game engine:
+
+![](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnk1dXV1OWhrcGt4YnZ2MGJhbWd4YW1vb2tyOTk2d2Y1dW45bm5ucCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rZHpt7u0M8MzEV8Th5/giphy-downsized-large.gif)
+![](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaTVvaHVtdmd0dGt5MWZuNjFqbmE5bjNyaTR1bGx5ZHluYTEwOGhpcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/zPtvpNASWKY4Pgpqpz/giphy-downsized-large.gif)
+
 ## 🕹️ How to build & play
 
 To play the game just simply clone the repository and open the `public/index.html` file in the browser.
