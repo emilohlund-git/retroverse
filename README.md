@@ -49,6 +49,10 @@ I appreciate your valuable time and effort in making RetroVerse better for every
 
 If you're unsure where to start or need any help, feel free to reach out to me. I'm looking forward to your contributions! 🌟
 
+## 🔒 License
+
+RetroVerse is open-source and available under the [MIT License](LICENSE). You are free to use, modify, and distribute the software in accordance with the terms specified in the license.
+
 <hr/>
 
 Made with ❤️ by [emilohlund-git](https://github.com/emilohlund-git)
