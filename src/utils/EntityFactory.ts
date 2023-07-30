@@ -8,6 +8,7 @@ import { LayerComponent } from "../components/LayerComponent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PlayerComponent } from "../components/PlayerComponent";
 import { PositionComponent } from "../components/PositionComponent";
+import { PropComponent } from "../components/PropComponent";
 import { RenderComponent } from "../components/RenderComponent";
 import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
@@ -34,6 +35,11 @@ export class EntityFactory {
 
   position(position: Vector2D): this {
     this.entity.addComponent("PositionComponent", new PositionComponent(position));
+    return this;
+  }
+
+  prop(): this {
+    this.entity.addComponent("PropComponent", new PropComponent());
     return this;
   }
 
@@ -92,8 +98,8 @@ export class EntityFactory {
     return this;
   }
 
-  animations(animations: Map<string, Animation>): this {
-    this.entity.addComponent("AnimationComponent", new AnimationComponent(animations, "", 0, 10, false, 0, 0, AnimationState.Finished));
+  animations(animations: Map<string, Animation>, currentAnimation?: string, isPlaying?: boolean): this {
+    this.entity.addComponent("AnimationComponent", new AnimationComponent(animations, currentAnimation, 0, 10, isPlaying, 0, 0, AnimationState.Finished));
     return this
   }
 

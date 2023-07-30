@@ -14,12 +14,14 @@ export class InventorySystem extends System {
   private slotWidth = 16;
   private slotHeight = 16;
   private slotSpacing = 2;
+  private numSlotsPerRow = 10;
 
   private hoveredItemIndex: number | null = null;
   private tooltip: HTMLDivElement | null = null;
 
   constructor() {
     super();
+    this.canvas.id = "inventory-canvas";
     const viewport = document.getElementById("viewport");
     if (!viewport) throw new Error("Viewport missing.");
     const context = this.canvas.getContext("2d");
@@ -58,11 +60,6 @@ export class InventorySystem extends System {
     for (let i = 0; i < inventory.maxCapacity; i++) {
       if (inventory.items[i]) {
         this.cropIconFromSpriteSheet(inventory.items[i].icon, i);
-
-        if (i === this.hoveredItemIndex) {
-          // Show tooltip for the hovered item
-          this.showTooltip(inventory.items[i].description, i * 64, 36);
-        }
       }
     }
   }
@@ -115,31 +112,6 @@ export class InventorySystem extends System {
     if (!this.playerInventory) return;
     this.hoveredItemIndex = null;
     this.updatePlayerInventory(this.playerInventory);
-    this.hideTooltip()
-  }
-
-  private showTooltip(description: string, x: number, y: number) {
-    if (!this.tooltip) {
-      this.tooltip = document.createElement("div");
-      this.tooltip.classList.add("tooltip");
-      const viewport = document.getElementById("viewport");
-      if (!viewport) throw new Error("Viewport missing.");
-      viewport.appendChild(this.tooltip);
-    }
-
-    // Position the tooltip below the item slot
-    this.tooltip.style.left = x + "px";
-    this.tooltip.style.top = y + this.slotHeight + 5 + "px"; // You can adjust the tooltip position as needed
-
-    // Set the tooltip content to the item description
-    this.tooltip.innerText = description;
-    this.tooltip.style.display = "block";
-  }
-
-  private hideTooltip() {
-    if (this.tooltip) {
-      this.tooltip.style.display = "none";
-    }
   }
 
   public addToPlayerInventory(item: ItemComponent) {

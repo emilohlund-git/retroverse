@@ -1,7 +1,5 @@
 import { Entity } from "./Entity";
 
-type ComponentType<T> = new (...args: any[]) => T;
-
 export class EntityManager {
   private entities = <Entity[]>[];
 

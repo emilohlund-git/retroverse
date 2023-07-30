@@ -410,6 +410,13 @@
     }
   };
 
+  // src/components/PropComponent.ts
+  var PropComponent = class extends Component {
+    constructor() {
+      super();
+    }
+  };
+
   // src/components/RenderComponent.ts
   var RenderComponent = class extends Component {
     constructor(width, height, spriteData, spriteSheet, tiled, frameX = 0, frameY = 0) {
@@ -473,6 +480,10 @@
       this.entity.addComponent("PositionComponent", new PositionComponent(position));
       return this;
     }
+    prop() {
+      this.entity.addComponent("PropComponent", new PropComponent());
+      return this;
+    }
     size(width, height) {
       const renderComponent = this.ensureRenderComponent();
       renderComponent.width = width;
@@ -518,8 +529,8 @@
       this.entity.addComponent("PlayerComponent", new PlayerComponent());
       return this;
     }
-    animations(animations3) {
-      this.entity.addComponent("AnimationComponent", new AnimationComponent(animations3, "", 0, 10, false, 0, 0, 1 /* Finished */));
+    animations(animations3, currentAnimation, isPlaying) {
+      this.entity.addComponent("AnimationComponent", new AnimationComponent(animations3, currentAnimation, 0, 10, isPlaying, 0, 0, 1 /* Finished */));
       return this;
     }
     ai(aggroRange) {
@@ -553,7 +564,7 @@
   animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
   animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
   function createEnemyEntity(entityManager2, name, positionX, positionY) {
-    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).inventory().layer(3).build();
+    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 0, 0, 16, 16).combat().ai(50).animations(animations).inventory().layer(3).build();
     const inventory = enemyEntity.getComponent("InventoryComponent");
     for (let i = 0; i < 1; i++) {
       inventory?.addItem({ ...cheese });
@@ -670,39 +681,60 @@
   var levelOne = {
     spriteSheets: [
       "floor-tiles",
-      "wall-tiles"
+      "wall-tiles",
+      "door-tiles"
     ],
     // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
     data: [
-      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 3, 1]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 0, 1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 1], [0, 1, 1, 2, 1], [0, 1, 1, 2, 1], [3, 1, 1, 3, 1], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 1], [0, 1, 1, 7, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 3], [0, 1, 1, 7, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [3, 1, 1, 3, 3], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 1, 1, 3, 2]],
-      [[0, 1, 1, 2, 3], [0, 1, 1, 4, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 3, 3]]
+      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [4, 1, 1, 3, 1], [4, 1, 1, 4, 1]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 1], [3, 1, 1, 2, 1], [3, 1, 1, 2, 1], [3, 1, 1, 3, 1], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 1], [0, 1, 1, 7, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 2, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 3], [0, 1, 1, 7, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 3, 3], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
+      [[0, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 3, 3], [4, 1, 1, 4, 3]]
     ]
   };
+
+  // src/sprites/torchAnimation.ts
+  SpriteSheetParser.extractSprites("torch", "torch", 16, 16, 128, 24, "./assets/spritesheets/decorations/Minifantasy_DungeonTorch.png");
+  var torchFireSpriteSheet = SpriteSheetParser.getSpriteSheet("torch", "torch");
+  var torchFireAnimation = new Animation("idle", [
+    torchFireSpriteSheet[0][0],
+    torchFireSpriteSheet[0][1],
+    torchFireSpriteSheet[0][2],
+    torchFireSpriteSheet[0][3],
+    torchFireSpriteSheet[0][4],
+    torchFireSpriteSheet[0][5],
+    torchFireSpriteSheet[0][6],
+    torchFireSpriteSheet[0][7]
+  ], 5e-3, true);
+
+  // src/sprites/props.ts
+  var torchAnimations = /* @__PURE__ */ new Map();
+  torchAnimations.set("fire", torchFireAnimation);
+  var torch = EntityFactory.create().size(16, 16).position(new Vector2D(105, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
+  var torch2 = EntityFactory.create().size(16, 16).position(new Vector2D(129, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
 
   // src/ai/BehaviorTree.ts
   var BehaviorTree = class {
@@ -1259,8 +1291,10 @@
       this.slotWidth = 16;
       this.slotHeight = 16;
       this.slotSpacing = 2;
+      this.numSlotsPerRow = 10;
       this.hoveredItemIndex = null;
       this.tooltip = null;
+      this.canvas.id = "inventory-canvas";
       const viewport = document.getElementById("viewport");
       if (!viewport)
         throw new Error("Viewport missing.");
@@ -1294,9 +1328,6 @@
       for (let i = 0; i < inventory.maxCapacity; i++) {
         if (inventory.items[i]) {
           this.cropIconFromSpriteSheet(inventory.items[i].icon, i);
-          if (i === this.hoveredItemIndex) {
-            this.showTooltip(inventory.items[i].description, i * 64, 36);
-          }
         }
       }
     }
@@ -1338,26 +1369,6 @@
         return;
       this.hoveredItemIndex = null;
       this.updatePlayerInventory(this.playerInventory);
-      this.hideTooltip();
-    }
-    showTooltip(description, x, y) {
-      if (!this.tooltip) {
-        this.tooltip = document.createElement("div");
-        this.tooltip.classList.add("tooltip");
-        const viewport = document.getElementById("viewport");
-        if (!viewport)
-          throw new Error("Viewport missing.");
-        viewport.appendChild(this.tooltip);
-      }
-      this.tooltip.style.left = x + "px";
-      this.tooltip.style.top = y + this.slotHeight + 5 + "px";
-      this.tooltip.innerText = description;
-      this.tooltip.style.display = "block";
-    }
-    hideTooltip() {
-      if (this.tooltip) {
-        this.tooltip.style.display = "none";
-      }
     }
     addToPlayerInventory(item) {
       this.playerInventory?.items.push(item);
@@ -1526,6 +1537,7 @@
       if (!viewport)
         throw new Error("Viewport missing.");
       const canvas = document.createElement("canvas");
+      canvas.id = "game-canvas";
       canvas.width = width;
       canvas.height = height;
       if (!canvas)
@@ -1547,6 +1559,7 @@
         return;
       const playerPositionComponent = playerEntity.getComponent("PositionComponent");
       if (playerPositionComponent) {
+        this.applyLighting(playerPositionComponent.position);
         this.updateRenderingBatches(entityManager2);
         this.renderEntities(playerPositionComponent.position);
         this.renderDroppedItems(playerPositionComponent.position, entityManager2);
@@ -1597,6 +1610,7 @@
       if (animationComponent) {
         const animation = animationComponent.animations.get(animationComponent.currentAnimation);
         const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
+        console.log(animationComponent);
         if (!currentAnimationFrame)
           return;
         const cameraX = playerPosition.x - this.cameraWidth / 2;
@@ -1674,6 +1688,12 @@
       if (!solidComponent || !positionComponent || !renderComponent)
         return;
       const { position } = positionComponent;
+      const distance = Math.sqrt(
+        (position.x - playerPosition.x) ** 2 + (position.y - playerPosition.y) ** 2
+      );
+      const maxDistance = Math.sqrt(this.cameraWidth ** 2 + this.cameraHeight ** 2);
+      const alpha = Math.min(1, (maxDistance - distance) / maxDistance);
+      this.ctx.globalAlpha = alpha;
       const cameraX = playerPosition.x - this.cameraWidth / 2;
       const cameraY = playerPosition.y - this.cameraHeight / 2;
       const adjustedX = position.x - cameraX;
@@ -1689,6 +1709,31 @@
         renderComponent.width,
         renderComponent.height
       );
+      this.ctx.globalAlpha = 1;
+    }
+    applyLighting(playerPosition) {
+      const cameraX = playerPosition.x - this.cameraWidth / 2;
+      const cameraY = playerPosition.y - this.cameraHeight / 2;
+      const gradient = this.ctx.createRadialGradient(
+        playerPosition.x - cameraX,
+        // x0: X-coordinate of the center of the gradient
+        playerPosition.y - cameraY,
+        // y0: Y-coordinate of the center of the gradient
+        0,
+        // r0: Inner radius (0 means the center, where the player is, is fully illuminated)
+        playerPosition.x - cameraX,
+        // x1: X-coordinate of the outer circle (edge of the camera view)
+        playerPosition.y - cameraY,
+        // y1: Y-coordinate of the outer circle (edge of the camera view)
+        this.cameraWidth / 2
+        // r1: Outer radius (tiles at the edge of the camera view are fully darkened)
+      );
+      gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)");
+      this.ctx.globalCompositeOperation = "source-over";
+      this.ctx.fillStyle = gradient;
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.globalCompositeOperation = "source-over";
     }
     render() {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1704,6 +1749,7 @@
   // src/main.ts
   SpriteSheetParser.extractSprites("dungeon-tiles", "floor-tiles", 8, 8, 56, 16, "./assets/tiles/MiniFantasy_DungeonFloorTiles.png");
   SpriteSheetParser.extractSprites("dungeon-tiles", "wall-tiles", 8, 8, 56, 112, "./assets/tiles/MiniFantasy_DungeonWallTiles.png");
+  SpriteSheetParser.extractSprites("dungeon-tiles", "door-tiles", 8, 8, 8, 16, "./assets/tiles/Minifantasy_DungeonDoorTiles.png");
   var entityManager = new EntityManager();
   var renderSystem = new RenderSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
   var inputSystem = new InputSystem();
@@ -1714,7 +1760,7 @@
   var inventorySystem = new InventorySystem();
   createPlayerEntity(entityManager);
   for (let i = 1; i < 2; i++) {
-    createEnemyEntity(entityManager, `enemy${i}`, 100, i);
+    createEnemyEntity(entityManager, `enemy${i}`, 110, 10);
   }
   var worldInventory = EntityFactory.create().name("world-inventory").position(new Vector2D(0, 0)).inventory(200).build();
   entityManager.addEntity(worldInventory);
@@ -1733,6 +1779,7 @@
     }
     entityManager2.addEntities(entitiesToAdd);
   }
+  entityManager.addEntities([torch, torch2]);
   createEntitiesFromLevelArray(levelOne.data, levelOne.spriteSheets, entityManager);
   var aiSystem = new AISystem(entityManager);
   var game = new Game(entityManager);

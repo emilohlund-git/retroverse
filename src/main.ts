@@ -4,6 +4,7 @@ import { EntityManager } from "./entities/EntityManager";
 import { createEnemyEntity } from "./entities/enemyEntity";
 import { createPlayerEntity } from "./entities/playerEntity";
 import { levelOne } from "./levels/level";
+import { torch, torch2 } from "./sprites/props";
 import { AISystem } from "./systems/AISystem";
 import { AnimationSystem } from "./systems/AnimationSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
@@ -20,6 +21,7 @@ import { LEVEL_HEIGHT, LEVEL_WIDTH, TILE_HEIGHT, TILE_WIDTH } from "./utils/cons
 // Load all the sprites
 SpriteSheetParser.extractSprites("dungeon-tiles", "floor-tiles", 8, 8, 56, 16, './assets/tiles/MiniFantasy_DungeonFloorTiles.png');
 SpriteSheetParser.extractSprites("dungeon-tiles", "wall-tiles", 8, 8, 56, 112, './assets/tiles/MiniFantasy_DungeonWallTiles.png');
+SpriteSheetParser.extractSprites("dungeon-tiles", "door-tiles", 8, 8, 8, 16, './assets/tiles/Minifantasy_DungeonDoorTiles.png');
 
 const entityManager = new EntityManager();
 const renderSystem = new RenderSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
@@ -33,7 +35,7 @@ const inventorySystem = new InventorySystem();
 createPlayerEntity(entityManager);
 
 for (let i = 1; i < 2; i++) {
-  createEnemyEntity(entityManager, `enemy${i}`, 100, i);
+  createEnemyEntity(entityManager, `enemy${i}`, 110, 10);
 }
 
 const worldInventory = EntityFactory.create()
@@ -69,6 +71,8 @@ function createEntitiesFromLevelArray(levelData: any[][], spriteSheets: string[]
 
   entityManager.addEntities(entitiesToAdd);
 }
+
+entityManager.addEntities([torch, torch2]);
 
 createEntitiesFromLevelArray(levelOne.data, levelOne.spriteSheets, entityManager);
 

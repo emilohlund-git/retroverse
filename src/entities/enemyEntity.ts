@@ -24,7 +24,7 @@ export function createEnemyEntity(entityManager: EntityManager, name: string, po
     .position(new Vector2D(positionX, positionY))
     .size(32, 32)
     .movement(new Vector2D(0, 0), 1)
-    .collision(CollisionType.BOX)
+    .collision(CollisionType.BOX, 0, 0, 16, 16)
     .combat()
     .ai(50)
     .animations(animations)

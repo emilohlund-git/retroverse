@@ -1,18 +1,18 @@
 body {
   display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
   background-color: #333;
 }
 
 #viewport {
-  width: 100vw;
-  position: relative;
-}
-
-#inventory {
   display: flex;
-  position: absolute;
-  z-index: 100;
-  background-color: aliceblue;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
 }
 
 .tooltip {
@@ -33,6 +33,19 @@ body {
 
 canvas {
   background-color: transparent;
+}
+
+#viewport #game-canvas {
+  border-radius: 2em;
+  background-color: black;
+  border: 2px solid black;
+}
+
+#viewport #intentory-canvas {
+  justify-self: flex-end;
+  align-self: flex-end;
+  bottom: 0;
+  position: absolute;
 }
 
 #viewport canvas {

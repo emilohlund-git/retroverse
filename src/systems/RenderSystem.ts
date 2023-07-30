@@ -23,6 +23,7 @@ export class RenderSystem extends System {
     const viewport = document.getElementById("viewport");
     if (!viewport) throw new Error("Viewport missing.");
     const canvas = document.createElement("canvas");
+    canvas.id = "game-canvas";
     canvas.width = width;
     canvas.height = height;
     if (!canvas) throw new Error('Failed to initialize game canvas.');
@@ -45,6 +46,7 @@ export class RenderSystem extends System {
     const playerPositionComponent = playerEntity.getComponent<PositionComponent>("PositionComponent");
 
     if (playerPositionComponent) {
+      this.applyLighting(playerPositionComponent.position);
       this.updateRenderingBatches(entityManager);
       this.renderEntities(playerPositionComponent.position);
       this.renderDroppedItems(playerPositionComponent.position, entityManager);
@@ -104,6 +106,7 @@ export class RenderSystem extends System {
     if (animationComponent) {
       const animation = animationComponent.animations.get(animationComponent.currentAnimation);
       const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
+      console.log(animationComponent);
       if (!currentAnimationFrame) return;
 
       const cameraX = playerPosition.x - this.cameraWidth / 2;
@@ -191,6 +194,16 @@ export class RenderSystem extends System {
 
     const { position } = positionComponent;
 
+    const distance = Math.sqrt(
+      (position.x - playerPosition.x) ** 2 +
+      (position.y - playerPosition.y) ** 2
+    );
+
+    const maxDistance = Math.sqrt(this.cameraWidth ** 2 + this.cameraHeight ** 2);
+    const alpha = Math.min(1, (maxDistance - distance) / maxDistance);
+
+    this.ctx.globalAlpha = alpha;
+
     const cameraX = playerPosition.x - this.cameraWidth / 2;
     const cameraY = playerPosition.y - this.cameraHeight / 2;
     const adjustedX = (position.x - cameraX);
@@ -207,6 +220,31 @@ export class RenderSystem extends System {
       renderComponent.width,
       renderComponent.height,
     );
+
+    this.ctx.globalAlpha = 1;
+  }
+
+  private applyLighting(playerPosition: Vector2D) {
+    const cameraX = playerPosition.x - this.cameraWidth / 2;
+    const cameraY = playerPosition.y - this.cameraHeight / 2;
+    const gradient = this.ctx.createRadialGradient(
+      playerPosition.x - cameraX, // x0: X-coordinate of the center of the gradient
+      playerPosition.y - cameraY, // y0: Y-coordinate of the center of the gradient
+      0,                          // r0: Inner radius (0 means the center, where the player is, is fully illuminated)
+      playerPosition.x - cameraX, // x1: X-coordinate of the outer circle (edge of the camera view)
+      playerPosition.y - cameraY, // y1: Y-coordinate of the outer circle (edge of the camera view)
+      this.cameraWidth / 2        // r1: Outer radius (tiles at the edge of the camera view are fully darkened)
+    );
+    gradient.addColorStop(0, "rgba(0, 0, 0, 0)"); // Fully transparent at the center (player position)
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)"); // Semi-transparent (adjust the alpha value to control darkness)
+
+    // Apply the gradient as a global composite operation to darken the tiles
+    this.ctx.globalCompositeOperation = "source-over";
+    this.ctx.fillStyle = gradient;
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Reset global composite operation to the default value
+    this.ctx.globalCompositeOperation = "source-over";
   }
 
   render(): void {
