@@ -43,7 +43,7 @@ export class Game {
 
   public run() {
     for (const system of this.systems) {
-      system.preload(this.entityManager.getEntitiesByComponent("RenderComponent"));
+      system.preload(this.entityManager);
     }
     this.gameLoop();
   }

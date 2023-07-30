@@ -1,5 +1,6 @@
 import { AnimationComponent } from "../components/AnimationComponent";
 import { CombatComponent } from "../components/CombatCompontent";
+import { InventoryComponent } from "../components/InventoryComponent";
 import { MovementComponent } from "../components/MovementComponent";
 import { EntityManager } from "../entities/EntityManager";
 import { System } from "./System";
@@ -25,6 +26,7 @@ export class InputSystem extends System {
     if (!combatComponent) return;
     const animationComponent = player.getComponent<AnimationComponent>("AnimationComponent");
     if (!animationComponent) return;
+    const inventoryComponent = player.getComponent<InventoryComponent>("InventoryComponent");
 
     if (!player) throw new Error('No player entity assigned.');
     if (!movementComponent) throw new Error('Player has no movement component.');
@@ -44,6 +46,14 @@ export class InputSystem extends System {
       }
       if (this.pressedKeys.has('W')) {
         yDirection = -1;
+      }
+    }
+
+    if (inventoryComponent) {
+      if (this.pressedKeys.has("E")) {
+        inventoryComponent.pickingUp = true;
+      } else {
+        inventoryComponent.pickingUp = false;
       }
     }
 

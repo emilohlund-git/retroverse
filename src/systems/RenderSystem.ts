@@ -101,8 +101,10 @@ export class RenderSystem extends System {
       const adjustedY = (positionComponent.position.y - cameraY);
 
       if (combatComponent) {
+        this.ctx.fillStyle = "gray"
+        this.ctx.fillRect(adjustedX + 13, adjustedY + 8, 7, 1);
         this.ctx.fillStyle = "red"
-        this.ctx.fillRect(adjustedX + 13, adjustedY + 8, (combatComponent.health / combatComponent.maxHealth) * 7, 2);
+        this.ctx.fillRect(adjustedX + 13, adjustedY + 8, (combatComponent.health / combatComponent.maxHealth) * 7, 1);
       }
 
       if (renderComponent.flipped) {

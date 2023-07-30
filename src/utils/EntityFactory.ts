@@ -3,6 +3,7 @@ import { AnimationComponent, AnimationState } from "../components/AnimationCompo
 import { CollisionComponent, CollisionType } from "../components/CollisionComponent";
 import { CombatComponent } from "../components/CombatCompontent";
 import { DebugComponent } from "../components/DebugComponent";
+import { InventoryComponent } from "../components/InventoryComponent";
 import { LayerComponent } from "../components/LayerComponent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PlayerComponent } from "../components/PlayerComponent";
@@ -45,6 +46,12 @@ export class EntityFactory {
 
   combat(): this {
     this.entity.addComponent("CombatComponent", new CombatComponent());
+    return this;
+  }
+
+  inventory(maxCapacity?: number): this {
+    const inventoryComponent = new InventoryComponent([], maxCapacity);
+    this.entity.addComponent("InventoryComponent", inventoryComponent);
     return this;
   }
 

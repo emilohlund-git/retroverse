@@ -9,6 +9,7 @@ import { AnimationSystem } from "./systems/AnimationSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
 import { CombatSystem } from "./systems/CombatSystem";
 import { InputSystem } from "./systems/InputSystem";
+import { InventorySystem } from "./systems/InventorySystem";
 import { LevelSystem } from "./systems/LevelSystem";
 import { MovementSystem } from "./systems/MovementSystem";
 import { RenderSystem } from "./systems/RenderSystem";
@@ -17,6 +18,7 @@ import { SpriteSheetParser } from "./utils/SpriteSheetParser";
 import { Vector2D } from "./utils/Vector2D";
 import { LEVEL_HEIGHT, LEVEL_WIDTH, TILE_HEIGHT, TILE_WIDTH } from "./utils/constants";
 
+// Load all the sprites
 SpriteSheetParser.extractSprites("dungeon-tiles", "floor-tiles", 8, 8, 56, 16, './assets/tiles/MiniFantasy_DungeonFloorTiles.png');
 SpriteSheetParser.extractSprites("dungeon-tiles", "wall-tiles", 8, 8, 56, 112, './assets/tiles/MiniFantasy_DungeonWallTiles.png');
 
@@ -28,12 +30,21 @@ const movementSystem = new MovementSystem();
 const collisionSystem = new CollisionSystem();
 const animationSystem = new AnimationSystem();
 const combatSystem = new CombatSystem();
+const inventorySystem = new InventorySystem();
 
 createPlayerEntity(entityManager);
 
-for (let i = 1; i < 2; i++) {
+for (let i = 1; i < 3; i++) {
   createEnemyEntity(entityManager, `enemy${i}`, i / 2, i);
 }
+
+const worldInventory = EntityFactory.create()
+  .name("world-inventory")
+  .position(new Vector2D(0, 0))
+  .inventory(200)
+  .build();
+
+entityManager.addEntity(worldInventory);
 
 function createEntitiesFromLevelArray(levelData: any[][], spriteSheets: string[], entityManager: EntityManager) {
   const entitiesToAdd = [];
@@ -66,8 +77,9 @@ createEntitiesFromLevelArray(levelOne.data, levelOne.spriteSheets, entityManager
 const aiSystem = new AISystem(entityManager);
 
 const game = new Game(entityManager);
+
 game.addSystems([
-  animationSystem, inputSystem, movementSystem, levelSystem, renderSystem, collisionSystem,
+  animationSystem, inputSystem, movementSystem, levelSystem, renderSystem, inventorySystem, collisionSystem,
   aiSystem, combatSystem
 ]);
 

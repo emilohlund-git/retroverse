@@ -29,8 +29,9 @@ export class SpriteSheetParser {
     imageWidth: number,
     imageHeight: number,
     spriteSheetUrl: string
-  ): void {
+  ) {
     const spriteSheetImage = new Image(imageWidth, imageHeight);
+
     spriteSheetImage.src = spriteSheetUrl;
 
     const numRows = Math.floor(spriteSheetImage.height / spriteHeight);

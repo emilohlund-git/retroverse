@@ -1,3 +1,4 @@
+import { InventoryComponent } from "../components/InventoryComponent";
 import { LayerComponent } from "../components/LayerComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { RenderComponent } from "../components/RenderComponent";
@@ -45,6 +46,7 @@ export class LevelSystem extends System {
 
     this.updateStaticRenderingBatches(entityManager);
     this.renderStaticLevelElements(playerPosition);
+    this.renderDroppedItems(playerPosition, entityManager);
   }
 
   private updateCamera(entityManager: EntityManager) {
@@ -76,6 +78,38 @@ export class LevelSystem extends System {
     for (const [_, entities] of sortedBatches) {
       for (const entity of entities) {
         this.renderStaticEntity(entity, playerPosition);
+      }
+    }
+  }
+
+  private renderDroppedItems(playerPosition: Vector2D, entityManager: EntityManager) {
+    const world = entityManager.getEntityByName("world-inventory");
+    if (!world) return;
+
+    const worldInventory = world?.getComponent<InventoryComponent>("InventoryComponent");
+
+    const positionComponent = world.getComponent<PositionComponent>("PositionComponent");
+    if (!worldInventory || !positionComponent) return;
+
+    const cameraX = playerPosition.x - this.cameraWidth / 2;
+    const cameraY = playerPosition.y - this.cameraHeight / 2;
+
+    for (const item of worldInventory.items) {
+      const adjustedX = (item.dropPosition.x - cameraX);
+      const adjustedY = (item.dropPosition.y - cameraY);
+
+      if (item.isDropped) {
+        this.ctx.drawImage(
+          item.icon.image,
+          item.icon.x,
+          item.icon.y,
+          item.icon.width,
+          item.icon.height,
+          adjustedX,
+          adjustedY + 15,
+          6,
+          6,
+        );
       }
     }
   }

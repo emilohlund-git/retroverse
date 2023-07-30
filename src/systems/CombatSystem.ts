@@ -1,9 +1,11 @@
 import { AnimationComponent } from "../components/AnimationComponent";
 import { CombatComponent } from "../components/CombatCompontent";
+import { InventoryComponent } from "../components/InventoryComponent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
+import { Vector2D } from "../utils/Vector2D";
 import { System } from "./System";
 
 export class CombatSystem extends System {
@@ -67,13 +69,15 @@ export class CombatSystem extends System {
           const angleDifference = angleToTarget - attackerMovement.currentFacingAngle;
 
           // Adjust the range of angleDifference to be between -Math.PI and Math.PI
-          const adjustedAngleDifference = (angleDifference + Math.PI) % (2 * Math.PI) - Math.PI;
+          const adjustedAngleDifference = ((angleDifference + Math.PI) % (2 * Math.PI)) - Math.PI;
 
           // TODO: Fix angles, currently the player can attack the enemy only from right
-          // Allow a small margin of error (10 degrees) to account for imprecise facing direction
-          if (Math.abs(adjustedAngleDifference) >= (Math.PI / 180) * 20 &&
-            ((attackerMovement.currentFacingAngle >= 0 && diffX > 0) ||
-              (attackerMovement.currentFacingAngle > 0 && diffX > 0))) {
+          const allowedAngleDifference = (Math.PI / 180) * 45;
+
+          console.log("Adjusted Angle Difference: " + adjustedAngleDifference, "Allowed Angle Difference: " + allowedAngleDifference, "Angle Difference: " + angleDifference, "Angle To Target: " + angleToTarget);
+
+          if (Math.abs(adjustedAngleDifference) >= allowedAngleDifference &&
+            distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
             closestTarget = potentialTarget;
             closestDistanceSq = distanceSq;
           }
@@ -82,7 +86,7 @@ export class CombatSystem extends System {
 
       if (closestTarget) {
         // Perform the attack on the closest target.
-        this.handleAttack(attacker, closestTarget);
+        this.handleAttack(attacker, closestTarget, entityManager);
       }
     }
   }
@@ -91,12 +95,19 @@ export class CombatSystem extends System {
     // Implement any combat-related rendering logic if needed
   }
 
-  private handleAttack(attacker: Entity, target: Entity) {
+  private handleAttack(attacker: Entity, target: Entity, entityManager: EntityManager) {
     const attackerCombat = attacker.getComponent<CombatComponent>("CombatComponent");
     const targetCombat = target.getComponent<CombatComponent>("CombatComponent");
     const targetAnimationComponent = target.getComponent<AnimationComponent>("AnimationComponent");
+    const targetInventoryComponent = target.getComponent<InventoryComponent>("InventoryComponent");
+    const attackerInventoryComponent = attacker.getComponent<InventoryComponent>("InventoryComponent");
+    const targetPositionComponent = target.getComponent<PositionComponent>("PositionComponent");
+    const world = entityManager.getEntityByName("world-inventory");
+    const worldInventory = world?.getComponent<InventoryComponent>("InventoryComponent");
 
-    if (!attackerCombat || !targetCombat) return; // Make sure both entities have the CombatComponent.
+    if (!worldInventory) return;
+
+    if (!attackerCombat || !targetCombat || !targetPositionComponent) return; // Make sure both entities have the CombatComponent.
 
     if (!targetCombat.isDead) targetCombat.isHurt = true;
 
@@ -108,14 +119,32 @@ export class CombatSystem extends System {
     if (targetCombat.health <= 0) {
       if (!targetCombat.isDead) {
         targetCombat.isDead = true;
-        if (targetAnimationComponent) {
-          targetAnimationComponent.currentFrameIndex = 0;
-          targetAnimationComponent.playAnimation("death");
+
+        if (targetInventoryComponent) {
+          for (const item of targetInventoryComponent.items) {
+            const randomXOffset = Math.random() * 10 - -10; // Generates a random number between -20 and +20
+            const randomYOffset = Math.random() * 10; // Generates a random number between -20 and +20
+
+            // Add the random offsets to the target position to get the dropped position
+            item.dropPosition = new Vector2D(
+              targetPositionComponent.position.x + randomXOffset,
+              targetPositionComponent.position.y - randomYOffset
+            );
+
+            item.isDropped = true;
+            worldInventory.addItem(item);
+          }
+
+          if (targetAnimationComponent) {
+            targetAnimationComponent.currentFrameIndex = 0;
+            targetAnimationComponent.playAnimation("death");
+          }
+
+          target.removeComponent("InventoryComponent");
+          target.removeComponent("AIComponent");
+          target.removeComponent("MovementComponent");
+          target.removeComponent("CombatComponent");
         }
-        target.removeComponent("AIComponent");
-        target.removeComponent("MovementComponent");
-        target.removeComponent("CombatComponent");
-        console.log(target);
       }
     }
   }

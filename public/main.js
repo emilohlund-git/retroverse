@@ -35,7 +35,7 @@
     }
     run() {
       for (const system of this.systems) {
-        system.preload(this.entityManager.getEntitiesByComponent("RenderComponent"));
+        system.preload(this.entityManager);
       }
       this.gameLoop();
     }
@@ -220,6 +220,51 @@
     enemyDieSpriteSheet[0][11]
   ], 0.01, false);
 
+  // src/utils/Vector2D.ts
+  var Vector2D = class {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+    get length() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    normalize() {
+      const length = this.length;
+      if (length !== 0) {
+        this.x /= length;
+        this.y /= length;
+      }
+    }
+  };
+
+  // src/components/ItemComponent.ts
+  var ItemComponent = class extends Component {
+    constructor(name, description, icon, dropPosition = new Vector2D(0, 0), isDropped = false) {
+      super();
+      this.name = name;
+      this.description = description;
+      this.icon = icon;
+      this.dropPosition = dropPosition;
+      this.isDropped = isDropped;
+    }
+  };
+
+  // src/sprites/items.ts
+  SpriteSheetParser.extractSprites("items", "all-items", 16, 16, 160, 160, "./assets/spritesheets/items/items.png");
+  var cheeseSprite = SpriteSheetParser.getSprite("items", "all-items", 4, 0);
+  var keySprite = SpriteSheetParser.getSprite("items", "all-items", 5, 0);
+  var bluePotionSprite = SpriteSheetParser.getSprite("items", "all-items", 0, 0);
+  var blueRingSprite = SpriteSheetParser.getSprite("items", "all-items", 4, 1);
+  var greenRingSprite = SpriteSheetParser.getSprite("items", "all-items", 5, 1);
+  var redPotionSprite = SpriteSheetParser.getSprite("items", "all-items", 1, 0);
+  var cheese = new ItemComponent("Cheese", "A stinky, stinky, stinky cheese. Smells like Boob's butt.", cheeseSprite);
+  var key = new ItemComponent("Key", "A key", keySprite);
+  var greenRing = new ItemComponent("Green Ring", "A green ring.", greenRingSprite);
+  var blueRing = new ItemComponent("Blue Ring", "A blue ring.", blueRingSprite);
+  var bluePotion = new ItemComponent("Blue Potion", "A blue potion.", bluePotionSprite);
+  var redPotion = new ItemComponent("Red Potion", "A red potion.", redPotionSprite);
+
   // src/components/AIComponent.ts
   var AIComponent = class extends Component {
     constructor(aggroRange, hasLineOfSight = false, isChasing = false) {
@@ -310,12 +355,28 @@
       const componentKeys = Object.entries(component);
       const debugSpan = document.createElement("span");
       const toAdd = [];
-      for (const key of componentKeys) {
-        if (key)
-          toAdd.push(key);
+      for (const key2 of componentKeys) {
+        if (key2)
+          toAdd.push(key2);
       }
       debugSpan.innerHTML += JSON.stringify(toAdd, null, 3);
       this.debugDiv.appendChild(debugSpan);
+    }
+  };
+
+  // src/components/InventoryComponent.ts
+  var InventoryComponent = class extends Component {
+    constructor(items = [], maxCapacity = 10, pickingUp = false) {
+      super();
+      this.items = items;
+      this.maxCapacity = maxCapacity;
+      this.pickingUp = pickingUp;
+    }
+    addItem(item) {
+      this.items.push(item);
+    }
+    removeItem(item) {
+      this.items.splice(this.items.indexOf(item), 1);
     }
   };
 
@@ -419,6 +480,11 @@
       this.entity.addComponent("CombatComponent", new CombatComponent());
       return this;
     }
+    inventory(maxCapacity) {
+      const inventoryComponent = new InventoryComponent([], maxCapacity);
+      this.entity.addComponent("InventoryComponent", inventoryComponent);
+      return this;
+    }
     spriteData(spriteData) {
       const renderComponent = this.ensureRenderComponent();
       renderComponent.spriteData = spriteData;
@@ -473,24 +539,6 @@
     }
   };
 
-  // src/utils/Vector2D.ts
-  var Vector2D = class {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-    }
-    get length() {
-      return Math.sqrt(this.x * this.x + this.y * this.y);
-    }
-    normalize() {
-      const length = this.length;
-      if (length !== 0) {
-        this.x /= length;
-        this.y /= length;
-      }
-    }
-  };
-
   // src/entities/enemyEntity.ts
   var animations = /* @__PURE__ */ new Map();
   animations.set(enemyIdleAnimation.name, enemyIdleAnimation);
@@ -502,7 +550,16 @@
   animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
   animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
   function createEnemyEntity(entityManager2, name, positionX, positionY) {
-    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).layer(0).build();
+    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).inventory().layer(0).build();
+    const inventory = enemyEntity.getComponent("InventoryComponent");
+    for (let i = 0; i < 10; i++) {
+      inventory?.addItem({ ...cheese });
+      inventory?.addItem({ ...key });
+      inventory?.addItem({ ...blueRing });
+      inventory?.addItem({ ...bluePotion });
+      inventory?.addItem({ ...redPotion });
+      inventory?.addItem({ ...greenRing });
+    }
     entityManager2.addEntity(enemyEntity);
   }
 
@@ -602,7 +659,7 @@
   animations2.set(playerDeathAnimation.name, playerDeathAnimation);
   var excludedComponents = ["DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
   function createPlayerEntity(entityManager2) {
-    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).player().combat().animations(animations2).layer(1).debug(entityManager2, excludedComponents).build();
+    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).player().combat().animations(animations2).layer(1).inventory().debug(entityManager2, excludedComponents).build();
     entityManager2.addEntity(playerEntity);
   }
 
@@ -1053,24 +1110,33 @@
             const angleToTarget = Math.atan2(targetPosition.y - attackerPosition.y, targetPosition.x - attackerPosition.x);
             const angleDifference = angleToTarget - attackerMovement.currentFacingAngle;
             const adjustedAngleDifference = (angleDifference + Math.PI) % (2 * Math.PI) - Math.PI;
-            if (Math.abs(adjustedAngleDifference) >= Math.PI / 180 * 20 && (attackerMovement.currentFacingAngle >= 0 && diffX > 0 || attackerMovement.currentFacingAngle > 0 && diffX > 0)) {
+            const allowedAngleDifference = Math.PI / 180 * 45;
+            console.log("Adjusted Angle Difference: " + adjustedAngleDifference, "Allowed Angle Difference: " + allowedAngleDifference, "Angle Difference: " + angleDifference, "Angle To Target: " + angleToTarget);
+            if (Math.abs(adjustedAngleDifference) >= allowedAngleDifference && distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
               closestTarget = potentialTarget;
               closestDistanceSq = distanceSq;
             }
           }
         }
         if (closestTarget) {
-          this.handleAttack(attacker, closestTarget);
+          this.handleAttack(attacker, closestTarget, entityManager2);
         }
       }
     }
     render() {
     }
-    handleAttack(attacker, target) {
+    handleAttack(attacker, target, entityManager2) {
       const attackerCombat = attacker.getComponent("CombatComponent");
       const targetCombat = target.getComponent("CombatComponent");
       const targetAnimationComponent = target.getComponent("AnimationComponent");
-      if (!attackerCombat || !targetCombat)
+      const targetInventoryComponent = target.getComponent("InventoryComponent");
+      const attackerInventoryComponent = attacker.getComponent("InventoryComponent");
+      const targetPositionComponent = target.getComponent("PositionComponent");
+      const world = entityManager2.getEntityByName("world-inventory");
+      const worldInventory2 = world?.getComponent("InventoryComponent");
+      if (!worldInventory2)
+        return;
+      if (!attackerCombat || !targetCombat || !targetPositionComponent)
         return;
       if (!targetCombat.isDead)
         targetCombat.isHurt = true;
@@ -1079,14 +1145,26 @@
       if (targetCombat.health <= 0) {
         if (!targetCombat.isDead) {
           targetCombat.isDead = true;
-          if (targetAnimationComponent) {
-            targetAnimationComponent.currentFrameIndex = 0;
-            targetAnimationComponent.playAnimation("death");
+          if (targetInventoryComponent) {
+            for (const item of targetInventoryComponent.items) {
+              const randomXOffset = Math.random() * 10 - -10;
+              const randomYOffset = Math.random() * 10;
+              item.dropPosition = new Vector2D(
+                targetPositionComponent.position.x + randomXOffset,
+                targetPositionComponent.position.y - randomYOffset
+              );
+              item.isDropped = true;
+              worldInventory2.addItem(item);
+            }
+            if (targetAnimationComponent) {
+              targetAnimationComponent.currentFrameIndex = 0;
+              targetAnimationComponent.playAnimation("death");
+            }
+            target.removeComponent("InventoryComponent");
+            target.removeComponent("AIComponent");
+            target.removeComponent("MovementComponent");
+            target.removeComponent("CombatComponent");
           }
-          target.removeComponent("AIComponent");
-          target.removeComponent("MovementComponent");
-          target.removeComponent("CombatComponent");
-          console.log(target);
         }
       }
     }
@@ -1114,6 +1192,7 @@
       const animationComponent = player.getComponent("AnimationComponent");
       if (!animationComponent)
         return;
+      const inventoryComponent = player.getComponent("InventoryComponent");
       if (!player)
         throw new Error("No player entity assigned.");
       if (!movementComponent)
@@ -1132,6 +1211,13 @@
         }
         if (this.pressedKeys.has("W")) {
           yDirection = -1;
+        }
+      }
+      if (inventoryComponent) {
+        if (this.pressedKeys.has("E")) {
+          inventoryComponent.pickingUp = true;
+        } else {
+          inventoryComponent.pickingUp = false;
         }
       }
       if (combatComponent) {
@@ -1156,6 +1242,146 @@
     }
     handleBlur() {
       this.pressedKeys.clear();
+    }
+  };
+
+  // src/systems/InventorySystem.ts
+  var InventorySystem = class extends System {
+    constructor() {
+      super();
+      this.canvas = document.createElement("canvas");
+      this.playerInventory = null;
+      this.slotWidth = 16;
+      this.slotHeight = 16;
+      this.slotSpacing = 2;
+      this.hoveredItemIndex = null;
+      this.tooltip = null;
+      const viewport = document.getElementById("viewport");
+      if (!viewport)
+        throw new Error("Viewport missing.");
+      const context = this.canvas.getContext("2d");
+      if (!context)
+        throw new Error("Error initializing inventory context.");
+      this.ctx = context;
+      viewport.appendChild(this.canvas);
+      this.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
+      this.canvas.addEventListener("mouseleave", this.handleMouseLeave.bind(this));
+    }
+    preload(entityManager2) {
+    }
+    update(deltaTime, entityManager2) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      const player = entityManager2.getEntitiesByComponent("PlayerComponent")[0];
+      const playerPosition = player.getComponent("PositionComponent")?.position;
+      const inventory = player.getComponent("InventoryComponent");
+      if (!inventory)
+        return;
+      this.playerInventory = inventory;
+      this.updatePlayerInventory(inventory);
+      if (playerPosition && inventory.pickingUp) {
+        this.handlePickupInteraction(playerPosition, entityManager2);
+      }
+    }
+    render() {
+    }
+    updatePlayerInventory(inventory) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      for (let i = 0; i < inventory.maxCapacity; i++) {
+        if (inventory.items[i]) {
+          this.cropIconFromSpriteSheet(inventory.items[i].icon, i);
+          if (i === this.hoveredItemIndex) {
+            this.showTooltip(inventory.items[i].description, i * 64, 36);
+          }
+        }
+      }
+    }
+    cropIconFromSpriteSheet(spriteData, slotIndex) {
+      const numSlotsPerRow = 10;
+      const x = slotIndex % numSlotsPerRow * (this.slotWidth + this.slotSpacing);
+      const y = Math.floor(slotIndex / numSlotsPerRow) * (this.slotHeight + this.slotSpacing);
+      this.ctx.fillStyle = "#888";
+      this.ctx.fillRect(x, y, this.slotWidth, this.slotHeight);
+      this.ctx.drawImage(
+        spriteData.image,
+        spriteData.x,
+        spriteData.y,
+        spriteData.width,
+        spriteData.height,
+        x,
+        y,
+        this.slotWidth,
+        this.slotHeight
+      );
+    }
+    handleMouseMove(event) {
+      if (!this.playerInventory)
+        return;
+      const rect = this.canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      const numSlotsPerRow = 10;
+      const hoveredSlotIndex = Math.floor(mouseY / (this.slotHeight + this.slotHeight * 3 + this.slotSpacing)) * numSlotsPerRow + Math.floor(mouseX / (this.slotWidth + this.slotWidth * 3 + this.slotSpacing));
+      if (hoveredSlotIndex >= 0 && hoveredSlotIndex < this.playerInventory.maxCapacity) {
+        this.hoveredItemIndex = hoveredSlotIndex;
+      } else {
+        this.hoveredItemIndex = null;
+      }
+      this.updatePlayerInventory(this.playerInventory);
+    }
+    handleMouseLeave() {
+      if (!this.playerInventory)
+        return;
+      this.hoveredItemIndex = null;
+      this.updatePlayerInventory(this.playerInventory);
+      this.hideTooltip();
+    }
+    showTooltip(description, x, y) {
+      if (!this.tooltip) {
+        this.tooltip = document.createElement("div");
+        this.tooltip.classList.add("tooltip");
+        const viewport = document.getElementById("viewport");
+        if (!viewport)
+          throw new Error("Viewport missing.");
+        viewport.appendChild(this.tooltip);
+      }
+      this.tooltip.style.left = x + "px";
+      this.tooltip.style.top = y + this.slotHeight + 5 + "px";
+      this.tooltip.innerText = description;
+      this.tooltip.style.display = "block";
+    }
+    hideTooltip() {
+      if (this.tooltip) {
+        this.tooltip.style.display = "none";
+      }
+    }
+    addToPlayerInventory(item) {
+      this.playerInventory?.items.push(item);
+    }
+    handlePickupInteraction(playerPosition, entityManager2) {
+      if (!this.playerInventory)
+        return;
+      const world = entityManager2.getEntityByName("world-inventory");
+      if (!world)
+        return;
+      const worldInventory2 = world.getComponent("InventoryComponent");
+      if (!worldInventory2)
+        return;
+      for (const item of worldInventory2.items) {
+        if (item.isDropped) {
+          const distanceToItem = this.calculateDistance(playerPosition, item.dropPosition);
+          const pickupDistance = 20;
+          if (distanceToItem <= pickupDistance && this.playerInventory.items.length <= this.playerInventory.maxCapacity) {
+            this.playerInventory.items.push(item);
+            item.isDropped = false;
+            break;
+          }
+        }
+      }
+    }
+    calculateDistance(pos1, pos2) {
+      const dx = pos1.x - pos2.x;
+      const dy = pos1.y - pos2.y;
+      return Math.sqrt(dx * dx + dy * dy);
     }
   };
 
@@ -1196,6 +1422,7 @@
       const { position: playerPosition } = playerPositionComponent;
       this.updateStaticRenderingBatches(entityManager2);
       this.renderStaticLevelElements(playerPosition);
+      this.renderDroppedItems(playerPosition, entityManager2);
     }
     updateCamera(entityManager2) {
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1221,6 +1448,34 @@
       for (const [_, entities] of sortedBatches) {
         for (const entity of entities) {
           this.renderStaticEntity(entity, playerPosition);
+        }
+      }
+    }
+    renderDroppedItems(playerPosition, entityManager2) {
+      const world = entityManager2.getEntityByName("world-inventory");
+      if (!world)
+        return;
+      const worldInventory2 = world?.getComponent("InventoryComponent");
+      const positionComponent = world.getComponent("PositionComponent");
+      if (!worldInventory2 || !positionComponent)
+        return;
+      const cameraX = playerPosition.x - this.cameraWidth / 2;
+      const cameraY = playerPosition.y - this.cameraHeight / 2;
+      for (const item of worldInventory2.items) {
+        const adjustedX = item.dropPosition.x - cameraX;
+        const adjustedY = item.dropPosition.y - cameraY;
+        if (item.isDropped) {
+          this.ctx.drawImage(
+            item.icon.image,
+            item.icon.x,
+            item.icon.y,
+            item.icon.width,
+            item.icon.height,
+            adjustedX,
+            adjustedY + 15,
+            6,
+            6
+          );
         }
       }
     }
@@ -1463,8 +1718,10 @@
         const adjustedX = positionComponent.position.x - cameraX;
         const adjustedY = positionComponent.position.y - cameraY;
         if (combatComponent) {
+          this.ctx.fillStyle = "gray";
+          this.ctx.fillRect(adjustedX + 13, adjustedY + 8, 7, 1);
           this.ctx.fillStyle = "red";
-          this.ctx.fillRect(adjustedX + 13, adjustedY + 8, combatComponent.health / combatComponent.maxHealth * 7, 2);
+          this.ctx.fillRect(adjustedX + 13, adjustedY + 8, combatComponent.health / combatComponent.maxHealth * 7, 1);
         }
         if (renderComponent.flipped) {
           this.ctx.save();
@@ -1518,10 +1775,13 @@
   var collisionSystem = new CollisionSystem();
   var animationSystem = new AnimationSystem();
   var combatSystem = new CombatSystem();
+  var inventorySystem = new InventorySystem();
   createPlayerEntity(entityManager);
-  for (let i = 1; i < 2; i++) {
+  for (let i = 1; i < 3; i++) {
     createEnemyEntity(entityManager, `enemy${i}`, i / 2, i);
   }
+  var worldInventory = EntityFactory.create().name("world-inventory").position(new Vector2D(0, 0)).inventory(200).build();
+  entityManager.addEntity(worldInventory);
   function createEntitiesFromLevelArray(levelData, spriteSheets, entityManager2) {
     const entitiesToAdd = [];
     for (let i = 0; i < levelData.length; i++) {
@@ -1546,6 +1806,7 @@
     movementSystem,
     levelSystem,
     renderSystem,
+    inventorySystem,
     collisionSystem,
     aiSystem,
     combatSystem

@@ -28,6 +28,7 @@ export function createPlayerEntity(entityManager: EntityManager) {
     .combat()
     .animations(animations)
     .layer(1)
+    .inventory()
     .debug(entityManager, excludedComponents)
     .build();
 
