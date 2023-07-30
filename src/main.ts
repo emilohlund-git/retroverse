@@ -30,7 +30,10 @@ const animationSystem = new AnimationSystem();
 const combatSystem = new CombatSystem();
 
 createPlayerEntity(entityManager);
-createEnemyEntity(entityManager);
+
+for (let i = 1; i < 2; i++) {
+  createEnemyEntity(entityManager, `enemy${i}`, i / 2, i);
+}
 
 function createEntitiesFromLevelArray(levelData: any[][], spriteSheets: string[], entityManager: EntityManager) {
   const entitiesToAdd = [];
@@ -43,6 +46,7 @@ function createEntitiesFromLevelArray(levelData: any[][], spriteSheets: string[]
       const tileEntity = EntityFactory.create()
         .position(new Vector2D(i * 8, j * 8))
         .size(8, 8)
+        .layer(0)
         .solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)!)
         .tiled(true)
 

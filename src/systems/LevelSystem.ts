@@ -39,7 +39,9 @@ export class LevelSystem extends System {
     const playerEntity = entityManager.getEntityByName('player');
     if (!playerEntity) return;
 
-    const { position: playerPosition } = playerEntity.getComponent(PositionComponent);
+    const playerPositionComponent = playerEntity.getComponent<PositionComponent>("PositionComponent");
+    if (!playerPositionComponent) return;
+    const { position: playerPosition } = playerPositionComponent
 
     this.updateStaticRenderingBatches(entityManager);
     this.renderStaticLevelElements(playerPosition);
@@ -54,10 +56,10 @@ export class LevelSystem extends System {
   private updateStaticRenderingBatches(entityManager: EntityManager) {
     this.staticRenderingBatches.clear();
 
-    const staticEntities = entityManager.getEntitiesByComponents([SolidComponent, RenderComponent]);
-
+    const staticEntities = entityManager.getEntitiesByComponents(["SolidComponent", "RenderComponent"]);
     for (const entity of staticEntities) {
-      const layerComponent = entity.getComponent(LayerComponent);
+      const layerComponent = entity.getComponent<LayerComponent>("LayerComponent");
+      if (!layerComponent) continue;
       const layer = layerComponent ? layerComponent.layer : 0;
 
       if (!this.staticRenderingBatches.has(layer)) {
@@ -79,11 +81,13 @@ export class LevelSystem extends System {
   }
 
   private renderStaticEntity(entity: Entity, playerPosition: Vector2D) {
-    const { position } = entity.getComponent(PositionComponent);
-    const renderComponent = entity.getComponent(RenderComponent);
-    const solidComponent = entity.getComponent(SolidComponent);
+    const positionComponent = entity.getComponent<PositionComponent>("PositionComponent");
+    const renderComponent = entity.getComponent<RenderComponent>("RenderComponent");
+    const solidComponent = entity.getComponent<SolidComponent>("SolidComponent");
 
-    if (!solidComponent) return;
+    if (!solidComponent || !positionComponent || !renderComponent) return;
+
+    const { position } = positionComponent;
 
     const cameraX = playerPosition.x - this.cameraWidth / 2;
     const cameraY = playerPosition.y - this.cameraHeight / 2;

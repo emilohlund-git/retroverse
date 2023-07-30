@@ -4,7 +4,7 @@ export const normalizeNumber = (number: number, min: number, max: number): numbe
   }
 
   // Ensure the number stays within the specified range [min, max]
-  const clampedNumber = Math.max(min, Math.min(number, max));
+  const clampedNumber = clamp(number, min, max);
 
   // Calculate the normalized value
   return (clampedNumber - min) / (max - min);

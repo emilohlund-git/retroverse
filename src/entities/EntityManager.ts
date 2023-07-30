@@ -1,4 +1,3 @@
-import { Component } from "../components/Component";
 import { Entity } from "./Entity";
 
 type ComponentType<T> = new (...args: any[]) => T;
@@ -18,11 +17,11 @@ export class EntityManager {
     return this.entities.find((e) => e.name === name);
   }
 
-  public getEntitiesByComponent<T extends Component>(component: ComponentType<T>): Entity[] {
-    return this.entities.filter((value) => value.getComponent(component) !== undefined);
+  public getEntitiesByComponent(componentName: string): Entity[] {
+    return this.entities.filter((value) => value.getComponent(componentName) !== undefined);
   }
 
-  public getEntitiesByComponents(components: any[]): Entity[] {
+  public getEntitiesByComponents(components: string[]): Entity[] {
     return this.entities.filter((value) => components.every((c) => value.getComponent(c) !== undefined));
   }
 }

@@ -1,20 +1,24 @@
 import { Component } from "../components/Component";
 
 export class Entity {
-  private components = new Set<Component>();
+  private components = new Map<string, Component>();
 
   constructor(public name: string) { }
 
-  public addComponent<T extends Component>(component: T): T {
-    this.components.add(component);
+  public addComponent<T extends Component>(componentName: string, component: T): T {
+    this.components.set(componentName, component);
     return component;
   }
 
-  public getComponent<T extends Component>(component: new (...args: any[]) => T): T {
-    return Array.from(this.components).find((c) => c instanceof component) as T;
+  public getComponent<T extends Component>(componentName: string): T | undefined {
+    return this.components.get(componentName) as T | undefined;
   }
 
   public getComponents(): Component[] {
     return Array.from(this.components.values());
+  }
+
+  public removeComponent(componentName: string): void {
+    this.components.delete(componentName);
   }
 }

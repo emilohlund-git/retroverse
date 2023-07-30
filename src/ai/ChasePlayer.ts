@@ -3,7 +3,7 @@ import { CollisionComponent, CollisionDetails } from "../components/CollisionCom
 import { CombatComponent } from "../components/CombatCompontent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PositionComponent } from "../components/PositionComponent";
-import { SolidComponent } from "../components/SolidComponent";
+import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { Vector2D } from "../utils/Vector2D";
 import { clamp } from "../utils/math";
@@ -12,63 +12,70 @@ import { BehaviorNode, BehaviorStatus } from "./BehaviorTree";
 export class ChasePlayer implements BehaviorNode {
   aiPosition: Vector2D;
   playerPosition: Vector2D;
+  enemyEntity: Entity;
+  playerEntity: Entity;
 
-  constructor(aiPosition: Vector2D, playerPosition: Vector2D) {
+  constructor(aiPosition: Vector2D, playerPosition: Vector2D, enemyEntity: Entity, playerEntity: Entity) {
     this.aiPosition = aiPosition;
     this.playerPosition = playerPosition;
+    this.enemyEntity = enemyEntity;
+    this.playerEntity = playerEntity;
   }
 
   tick(entityManager: EntityManager): BehaviorStatus {
-    const enemyEntities = entityManager.getEntitiesByComponent(AIComponent);
-    const playerEntity = entityManager.getEntityByName('player');
-    if (!playerEntity) {
+    if (!this.playerEntity) {
       return 'FAILURE';
     }
 
-    const playerPositionComponent = playerEntity.getComponent(PositionComponent);
-    const playerCombatComponent = playerEntity.getComponent(CombatComponent);
+    const playerPositionComponent = this.playerEntity.getComponent<PositionComponent>("PositionComponent");
+    if (!playerPositionComponent) return "FAILURE";
+    const playerCombatComponent = this.playerEntity.getComponent<CombatComponent>("CombatComponent");
+    if (!playerCombatComponent) return "FAILURE";
+    const aiComponent = this.enemyEntity.getComponent<AIComponent>("AIComponent");
+    if (!aiComponent) return "FAILURE";
+    const positionComponent = this.enemyEntity.getComponent<PositionComponent>("PositionComponent");
+    if (!positionComponent) return 'FAILURE';
+    const movementComponent = this.enemyEntity.getComponent<MovementComponent>("MovementComponent");
+    if (!movementComponent) return "FAILURE";
+    const combatComponent = this.enemyEntity.getComponent<CombatComponent>("CombatComponent");
+    if (!combatComponent) return "FAILURE";
 
-    for (const enemyEntity of enemyEntities) {
-      const aiComponent = enemyEntity.getComponent(AIComponent);
-      const positionComponent = enemyEntity.getComponent(PositionComponent);
-      const movementComponent = enemyEntity.getComponent(MovementComponent);
-      const combatComponent = enemyEntity.getComponent(CombatComponent);
+    const directionX = playerPositionComponent.position.x - positionComponent.position.x;
+    const directionY = playerPositionComponent.position.y - positionComponent.position.y;
 
-      const directionX = playerPositionComponent.position.x - positionComponent.position.x;
-      const directionY = playerPositionComponent.position.y - positionComponent.position.y;
+    const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
 
-      const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
-
-      if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent) &&
-        !playerCombatComponent.isDead) {
-        if (distanceToPlayer < 10) {
-          aiComponent.isChasing = false;
-          combatComponent.isAttacking = true;
-          movementComponent.direction.x = 0;
-          movementComponent.direction.y = 0;
-          return 'SUCCESS';
-        } else {
-          aiComponent.isChasing = true;
-          combatComponent.attackInitiated = false;
-          combatComponent.isAttacking = false;
-          // Normalize the direction vector to maintain equal speed in all directions
-          movementComponent.direction.x = clamp(-directionX, -1, 1);
-          movementComponent.direction.y = clamp(directionY, -1, 1);
-        }
-      } else {
+    if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent) &&
+      !playerCombatComponent.isDead) {
+      if (distanceToPlayer < 10) {
         aiComponent.isChasing = false;
-        combatComponent.attackInitiated = false;
-        combatComponent.isAttacking = false;
+        if (combatComponent.attackCooldown < 1) {
+          combatComponent.isAttacking = true;
+        }
         movementComponent.direction.x = 0;
         movementComponent.direction.y = 0;
         return 'SUCCESS';
+      } else {
+        aiComponent.isChasing = true;
+        combatComponent.attackInitiated = false;
+        combatComponent.isAttacking = false;
+        // Normalize the direction vector to maintain equal speed in all directions
+        movementComponent.direction.x = clamp(-directionX, -1, 1);
+        movementComponent.direction.y = clamp(directionY, -1, 1);
       }
+    } else {
+      aiComponent.isChasing = false;
+      combatComponent.attackInitiated = false;
+      combatComponent.isAttacking = false;
+      movementComponent.direction.x = 0;
+      movementComponent.direction.y = 0;
+      return 'SUCCESS';
     }
     return 'RUNNING';
   }
 
   private hasLineOfSight(entityManager: EntityManager, entityPosition: PositionComponent, playerPosition: PositionComponent, aiComponent: AIComponent): boolean {
-    const obstacles = entityManager.getEntitiesByComponents([SolidComponent, CollisionComponent]);
+    const obstacles = entityManager.getEntitiesByComponents(["SolidComponent", "CollisionComponent"]);
 
     const directionX = playerPosition.position.x - entityPosition.position.x;
     const directionY = playerPosition.position.y - entityPosition.position.y;
@@ -85,9 +92,9 @@ export class ChasePlayer implements BehaviorNode {
       const stepY = entityPosition.position.y + intervalFactor * normalizedDirectionY * distanceToPlayer;
 
       for (const obstacleEntity of obstacles) {
-        const obstaclePosition = obstacleEntity.getComponent(PositionComponent);
-        const collisionComponent = obstacleEntity.getComponent(CollisionComponent);
-        if (!collisionComponent) continue;
+        const obstaclePosition = obstacleEntity.getComponent<PositionComponent>("PositionComponent");
+        const collisionComponent = obstacleEntity.getComponent<CollisionComponent>("CollisionComponent");
+        if (!collisionComponent || !obstaclePosition) continue;
 
         if (this.isObstacleBetweenPoints(entityPosition.position, { x: stepX, y: stepY }, obstaclePosition.position, collisionComponent.collisionDetails)) {
           aiComponent.hasLineOfSight = false;

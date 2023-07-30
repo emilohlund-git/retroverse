@@ -32,7 +32,7 @@ export class EntityFactory {
   }
 
   position(position: Vector2D): this {
-    this.entity.addComponent(new PositionComponent(position));
+    this.entity.addComponent("PositionComponent", new PositionComponent(position));
     return this;
   }
 
@@ -44,7 +44,7 @@ export class EntityFactory {
   }
 
   combat(): this {
-    this.entity.addComponent(new CombatComponent());
+    this.entity.addComponent("CombatComponent", new CombatComponent());
     return this;
   }
 
@@ -61,42 +61,42 @@ export class EntityFactory {
   }
 
   solid(spriteData: SpriteData): this {
-    this.entity.addComponent(new SolidComponent(spriteData));
+    this.entity.addComponent("SolidComponent", new SolidComponent(spriteData));
     return this;
   }
 
   collision(collisionType: CollisionType, offsetX?: number, offsetY?: number, width?: number, height?: number): this {
-    this.entity.addComponent(new CollisionComponent(collisionType, offsetX, offsetY, width, height));
+    this.entity.addComponent("CollisionComponent", new CollisionComponent(collisionType, offsetX, offsetY, width, height));
     return this;
   }
 
   movement(movement: Vector2D, moveSpeed: number): this {
-    this.entity.addComponent(new MovementComponent(movement, moveSpeed));
+    this.entity.addComponent("MovementComponent", new MovementComponent(movement, moveSpeed));
     return this;
   }
 
   layer(layer: number): this {
-    this.entity.addComponent(new LayerComponent(layer));
+    this.entity.addComponent("LayerComponent", new LayerComponent(layer));
     return this;
   }
 
   player(): this {
-    this.entity.addComponent(new PlayerComponent());
+    this.entity.addComponent("PlayerComponent", new PlayerComponent());
     return this;
   }
 
   animations(animations: Map<string, Animation>): this {
-    this.entity.addComponent(new AnimationComponent(animations, "", 0, 10, false, 0, 0, AnimationState.Finished));
+    this.entity.addComponent("AnimationComponent", new AnimationComponent(animations, "", 0, 10, false, 0, 0, AnimationState.Finished));
     return this
   }
 
   ai(aggroRange: number): this {
-    this.entity.addComponent(new AIComponent(aggroRange));
+    this.entity.addComponent("AIComponent", new AIComponent(aggroRange));
     return this;
   }
 
   debug(entityManager: EntityManager, excludedComponents?: string[]): this {
-    this.entity.addComponent(new DebugComponent(entityManager, excludedComponents));
+    this.entity.addComponent("DebugComponent", new DebugComponent(entityManager, excludedComponents));
     return this;
   }
 
@@ -105,9 +105,9 @@ export class EntityFactory {
   }
 
   private ensureRenderComponent(): RenderComponent {
-    let renderComponent = this.entity.getComponent(RenderComponent);
+    let renderComponent = this.entity.getComponent<RenderComponent>("RenderComponent");
     if (!renderComponent) {
-      renderComponent = this.entity.addComponent(new RenderComponent(0, 0, {} as SpriteData));
+      renderComponent = this.entity.addComponent("RenderComponent", new RenderComponent(0, 0, {} as SpriteData));
     }
     return renderComponent;
   }

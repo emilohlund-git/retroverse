@@ -1,71 +1,5 @@
 "use strict";
 (() => {
-  // src/components/Component.ts
-  var Component = class {
-  };
-
-  // src/components/DebugComponent.ts
-  var DebugComponent = class _DebugComponent extends Component {
-    constructor(entityManager2, excludedComponents2 = []) {
-      super();
-      this.entityManager = entityManager2;
-      this.excludedComponents = excludedComponents2;
-      this.debugDiv = document.createElement("div");
-      this.debugDiv.id = "debug-window";
-      document.getElementById("debug-container")?.appendChild(this.debugDiv);
-    }
-    debug() {
-      this.debugDiv.innerHTML = "";
-      const debugEntities = this.entityManager.getEntitiesByComponent(_DebugComponent);
-      for (const entity of debugEntities) {
-        this.addDebugInfoForComponent(entity);
-        const components = entity.getComponents();
-        components.forEach((component) => {
-          if (!this.excludedComponents.includes(component.constructor.name)) {
-            this.addDebugInfoForComponent(component);
-          }
-        });
-      }
-    }
-    addDebugInfoForComponent(component) {
-      const componentName = component.constructor.name;
-      const componentTitle = document.createElement("h2");
-      componentTitle.innerText = componentName;
-      this.debugDiv.appendChild(componentTitle);
-      this.handleComponentProperties(component);
-    }
-    handleComponentProperties(component) {
-      const componentKeys = Object.keys(component);
-      for (const key of componentKeys) {
-        const value = component[key];
-        if (typeof value !== "function") {
-          const debugSpan = document.createElement("span");
-          debugSpan.innerText = `${key}: ${JSON.stringify(value, null, 2)}`;
-          this.debugDiv.appendChild(debugSpan);
-        }
-      }
-    }
-  };
-
-  // src/components/PlayerComponent.ts
-  var PlayerComponent = class extends Component {
-  };
-
-  // src/components/RenderComponent.ts
-  var RenderComponent = class extends Component {
-    constructor(width, height, spriteData, spriteSheet, tiled, frameX = 0, frameY = 0) {
-      super();
-      this.width = width;
-      this.height = height;
-      this.spriteData = spriteData;
-      this.spriteSheet = spriteSheet;
-      this.tiled = tiled;
-      this.frameX = frameX;
-      this.frameY = frameY;
-      this.flipped = false;
-    }
-  };
-
   // src/Game.ts
   var Game = class {
     constructor(entityManager2) {
@@ -93,18 +27,22 @@
       this.debug();
     }
     debug() {
-      const entity = this.entityManager.getEntitiesByComponent(PlayerComponent)[0];
-      const debugComponent = entity.getComponent(DebugComponent);
+      const entity = this.entityManager.getEntitiesByComponent("PlayerComponent")[0];
+      const debugComponent = entity.getComponent("DebugComponent");
       if (debugComponent) {
         debugComponent.debug();
       }
     }
     run() {
       for (const system of this.systems) {
-        system.preload(this.entityManager.getEntitiesByComponent(RenderComponent));
+        system.preload(this.entityManager.getEntitiesByComponent("RenderComponent"));
       }
       this.gameLoop();
     }
+  };
+
+  // src/components/Component.ts
+  var Component = class {
   };
 
   // src/components/CollisionComponent.ts
@@ -139,8 +77,8 @@
     getEntityByName(name) {
       return this.entities.find((e) => e.name === name);
     }
-    getEntitiesByComponent(component) {
-      return this.entities.filter((value) => value.getComponent(component) !== void 0);
+    getEntitiesByComponent(componentName) {
+      return this.entities.filter((value) => value.getComponent(componentName) !== void 0);
     }
     getEntitiesByComponents(components) {
       return this.entities.filter((value) => components.every((c) => value.getComponent(c) !== void 0));
@@ -324,7 +262,7 @@
 
   // src/components/CombatCompontent.ts
   var CombatComponent = class extends Component {
-    constructor(isAttacking = false, attackInitiated = false, isHurt = false, attackRange = 10, attackPower = 5, defense = 4, health = 20, isDead = false, attackCooldown = 20) {
+    constructor(isAttacking = false, attackInitiated = false, isHurt = false, attackRange = 10, attackPower = 15, defense = 4, health = 20, maxHealth = 20, isDead = false, attackCooldown = 0, lastAttackTime = 0) {
       super();
       this.isAttacking = isAttacking;
       this.attackInitiated = attackInitiated;
@@ -333,8 +271,51 @@
       this.attackPower = attackPower;
       this.defense = defense;
       this.health = health;
+      this.maxHealth = maxHealth;
       this.isDead = isDead;
       this.attackCooldown = attackCooldown;
+      this.lastAttackTime = lastAttackTime;
+    }
+  };
+
+  // src/components/DebugComponent.ts
+  var DebugComponent = class extends Component {
+    constructor(entityManager2, excludedComponents2 = []) {
+      super();
+      this.entityManager = entityManager2;
+      this.excludedComponents = excludedComponents2;
+      this.debugDiv = document.createElement("div");
+      this.debugDiv.id = "debug-window";
+      document.getElementById("debug-container")?.appendChild(this.debugDiv);
+    }
+    debug() {
+      this.debugDiv.innerHTML = "";
+      const debugEntities = this.entityManager.getEntitiesByComponent("DebugComponent");
+      for (const entity of debugEntities) {
+        const components = entity.getComponents();
+        components.forEach((component) => {
+          if (!this.excludedComponents.includes(component.constructor.name)) {
+            this.addDebugInfoForComponent(component.constructor.name, component);
+          }
+        });
+      }
+    }
+    addDebugInfoForComponent(componentName, component) {
+      const componentTitle = document.createElement("h2");
+      componentTitle.innerText = componentName;
+      this.debugDiv.appendChild(componentTitle);
+      this.handleComponentProperties(component);
+    }
+    handleComponentProperties(component) {
+      const componentKeys = Object.entries(component);
+      const debugSpan = document.createElement("span");
+      const toAdd = [];
+      for (const key of componentKeys) {
+        if (key)
+          toAdd.push(key);
+      }
+      debugSpan.innerHTML += JSON.stringify(toAdd, null, 3);
+      this.debugDiv.appendChild(debugSpan);
     }
   };
 
@@ -356,11 +337,30 @@
     }
   };
 
+  // src/components/PlayerComponent.ts
+  var PlayerComponent = class extends Component {
+  };
+
   // src/components/PositionComponent.ts
   var PositionComponent = class extends Component {
     constructor(position) {
       super();
       this.position = position;
+    }
+  };
+
+  // src/components/RenderComponent.ts
+  var RenderComponent = class extends Component {
+    constructor(width, height, spriteData, spriteSheet, tiled, frameX = 0, frameY = 0) {
+      super();
+      this.width = width;
+      this.height = height;
+      this.spriteData = spriteData;
+      this.spriteSheet = spriteSheet;
+      this.tiled = tiled;
+      this.frameX = frameX;
+      this.frameY = frameY;
+      this.flipped = false;
     }
   };
 
@@ -376,17 +376,20 @@
   var Entity = class {
     constructor(name) {
       this.name = name;
-      this.components = /* @__PURE__ */ new Set();
+      this.components = /* @__PURE__ */ new Map();
     }
-    addComponent(component) {
-      this.components.add(component);
+    addComponent(componentName, component) {
+      this.components.set(componentName, component);
       return component;
     }
-    getComponent(component) {
-      return Array.from(this.components).find((c) => c instanceof component);
+    getComponent(componentName) {
+      return this.components.get(componentName);
     }
     getComponents() {
       return Array.from(this.components.values());
+    }
+    removeComponent(componentName) {
+      this.components.delete(componentName);
     }
   };
 
@@ -403,7 +406,7 @@
       return this;
     }
     position(position) {
-      this.entity.addComponent(new PositionComponent(position));
+      this.entity.addComponent("PositionComponent", new PositionComponent(position));
       return this;
     }
     size(width, height) {
@@ -413,7 +416,7 @@
       return this;
     }
     combat() {
-      this.entity.addComponent(new CombatComponent());
+      this.entity.addComponent("CombatComponent", new CombatComponent());
       return this;
     }
     spriteData(spriteData) {
@@ -427,44 +430,44 @@
       return this;
     }
     solid(spriteData) {
-      this.entity.addComponent(new SolidComponent(spriteData));
+      this.entity.addComponent("SolidComponent", new SolidComponent(spriteData));
       return this;
     }
     collision(collisionType, offsetX, offsetY, width, height) {
-      this.entity.addComponent(new CollisionComponent(collisionType, offsetX, offsetY, width, height));
+      this.entity.addComponent("CollisionComponent", new CollisionComponent(collisionType, offsetX, offsetY, width, height));
       return this;
     }
     movement(movement, moveSpeed) {
-      this.entity.addComponent(new MovementComponent(movement, moveSpeed));
+      this.entity.addComponent("MovementComponent", new MovementComponent(movement, moveSpeed));
       return this;
     }
     layer(layer) {
-      this.entity.addComponent(new LayerComponent(layer));
+      this.entity.addComponent("LayerComponent", new LayerComponent(layer));
       return this;
     }
     player() {
-      this.entity.addComponent(new PlayerComponent());
+      this.entity.addComponent("PlayerComponent", new PlayerComponent());
       return this;
     }
     animations(animations3) {
-      this.entity.addComponent(new AnimationComponent(animations3, "", 0, 10, false, 0, 0, 1 /* Finished */));
+      this.entity.addComponent("AnimationComponent", new AnimationComponent(animations3, "", 0, 10, false, 0, 0, 1 /* Finished */));
       return this;
     }
     ai(aggroRange) {
-      this.entity.addComponent(new AIComponent(aggroRange));
+      this.entity.addComponent("AIComponent", new AIComponent(aggroRange));
       return this;
     }
     debug(entityManager2, excludedComponents2) {
-      this.entity.addComponent(new DebugComponent(entityManager2, excludedComponents2));
+      this.entity.addComponent("DebugComponent", new DebugComponent(entityManager2, excludedComponents2));
       return this;
     }
     build() {
       return this.entity;
     }
     ensureRenderComponent() {
-      let renderComponent = this.entity.getComponent(RenderComponent);
+      let renderComponent = this.entity.getComponent("RenderComponent");
       if (!renderComponent) {
-        renderComponent = this.entity.addComponent(new RenderComponent(0, 0, {}));
+        renderComponent = this.entity.addComponent("RenderComponent", new RenderComponent(0, 0, {}));
       }
       return renderComponent;
     }
@@ -488,12 +491,6 @@
     }
   };
 
-  // src/utils/constants.ts
-  var TILE_WIDTH = 32;
-  var TILE_HEIGHT = 32;
-  var LEVEL_WIDTH = 20;
-  var LEVEL_HEIGHT = 15;
-
   // src/entities/enemyEntity.ts
   var animations = /* @__PURE__ */ new Map();
   animations.set(enemyIdleAnimation.name, enemyIdleAnimation);
@@ -504,8 +501,8 @@
   animations.set(enemyAttackUpAnimation.name, enemyAttackUpAnimation);
   animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
   animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
-  function createEnemyEntity(entityManager2) {
-    const enemyEntity = EntityFactory.create().name("enemy").position(new Vector2D(TILE_WIDTH * 4, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).layer(0).build();
+  function createEnemyEntity(entityManager2, name, positionX, positionY) {
+    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).layer(0).build();
     entityManager2.addEntity(enemyEntity);
   }
 
@@ -587,6 +584,12 @@
     playerDieSpriteSheet[0][13]
   ], 0.01, false);
 
+  // src/utils/constants.ts
+  var TILE_WIDTH = 32;
+  var TILE_HEIGHT = 32;
+  var LEVEL_WIDTH = 20;
+  var LEVEL_HEIGHT = 15;
+
   // src/entities/playerEntity.ts
   var animations2 = /* @__PURE__ */ new Map();
   animations2.set(playerIdleAnimation.name, playerIdleAnimation);
@@ -597,7 +600,7 @@
   animations2.set(playerAttackUpAnimation.name, playerAttackUpAnimation);
   animations2.set(playerHurtAnimation.name, playerHurtAnimation);
   animations2.set(playerDeathAnimation.name, playerDeathAnimation);
-  var excludedComponents = ["_DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
+  var excludedComponents = ["DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
   function createPlayerEntity(entityManager2) {
     const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).player().combat().animations(animations2).layer(1).debug(entityManager2, excludedComponents).build();
     entityManager2.addEntity(playerEntity);
@@ -656,53 +659,65 @@
 
   // src/ai/ChasePlayer.ts
   var ChasePlayer = class {
-    constructor(aiPosition, playerPosition) {
+    constructor(aiPosition, playerPosition, enemyEntity, playerEntity) {
       this.aiPosition = aiPosition;
       this.playerPosition = playerPosition;
+      this.enemyEntity = enemyEntity;
+      this.playerEntity = playerEntity;
     }
     tick(entityManager2) {
-      const enemyEntities = entityManager2.getEntitiesByComponent(AIComponent);
-      const playerEntity = entityManager2.getEntityByName("player");
-      if (!playerEntity) {
+      if (!this.playerEntity) {
         return "FAILURE";
       }
-      const playerPositionComponent = playerEntity.getComponent(PositionComponent);
-      const playerCombatComponent = playerEntity.getComponent(CombatComponent);
-      for (const enemyEntity of enemyEntities) {
-        const aiComponent = enemyEntity.getComponent(AIComponent);
-        const positionComponent = enemyEntity.getComponent(PositionComponent);
-        const movementComponent = enemyEntity.getComponent(MovementComponent);
-        const combatComponent = enemyEntity.getComponent(CombatComponent);
-        const directionX = playerPositionComponent.position.x - positionComponent.position.x;
-        const directionY = playerPositionComponent.position.y - positionComponent.position.y;
-        const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
-        if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager2, positionComponent, playerPositionComponent, aiComponent) && !playerCombatComponent.isDead) {
-          if (distanceToPlayer < 10) {
-            aiComponent.isChasing = false;
-            combatComponent.isAttacking = true;
-            movementComponent.direction.x = 0;
-            movementComponent.direction.y = 0;
-            return "SUCCESS";
-          } else {
-            aiComponent.isChasing = true;
-            combatComponent.attackInitiated = false;
-            combatComponent.isAttacking = false;
-            movementComponent.direction.x = clamp(-directionX, -1, 1);
-            movementComponent.direction.y = clamp(directionY, -1, 1);
-          }
-        } else {
+      const playerPositionComponent = this.playerEntity.getComponent("PositionComponent");
+      if (!playerPositionComponent)
+        return "FAILURE";
+      const playerCombatComponent = this.playerEntity.getComponent("CombatComponent");
+      if (!playerCombatComponent)
+        return "FAILURE";
+      const aiComponent = this.enemyEntity.getComponent("AIComponent");
+      if (!aiComponent)
+        return "FAILURE";
+      const positionComponent = this.enemyEntity.getComponent("PositionComponent");
+      if (!positionComponent)
+        return "FAILURE";
+      const movementComponent = this.enemyEntity.getComponent("MovementComponent");
+      if (!movementComponent)
+        return "FAILURE";
+      const combatComponent = this.enemyEntity.getComponent("CombatComponent");
+      if (!combatComponent)
+        return "FAILURE";
+      const directionX = playerPositionComponent.position.x - positionComponent.position.x;
+      const directionY = playerPositionComponent.position.y - positionComponent.position.y;
+      const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
+      if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager2, positionComponent, playerPositionComponent, aiComponent) && !playerCombatComponent.isDead) {
+        if (distanceToPlayer < 10) {
           aiComponent.isChasing = false;
-          combatComponent.attackInitiated = false;
-          combatComponent.isAttacking = false;
+          if (combatComponent.attackCooldown < 1) {
+            combatComponent.isAttacking = true;
+          }
           movementComponent.direction.x = 0;
           movementComponent.direction.y = 0;
           return "SUCCESS";
+        } else {
+          aiComponent.isChasing = true;
+          combatComponent.attackInitiated = false;
+          combatComponent.isAttacking = false;
+          movementComponent.direction.x = clamp(-directionX, -1, 1);
+          movementComponent.direction.y = clamp(directionY, -1, 1);
         }
+      } else {
+        aiComponent.isChasing = false;
+        combatComponent.attackInitiated = false;
+        combatComponent.isAttacking = false;
+        movementComponent.direction.x = 0;
+        movementComponent.direction.y = 0;
+        return "SUCCESS";
       }
       return "RUNNING";
     }
     hasLineOfSight(entityManager2, entityPosition, playerPosition, aiComponent) {
-      const obstacles = entityManager2.getEntitiesByComponents([SolidComponent, CollisionComponent]);
+      const obstacles = entityManager2.getEntitiesByComponents(["SolidComponent", "CollisionComponent"]);
       const directionX = playerPosition.position.x - entityPosition.position.x;
       const directionY = playerPosition.position.y - entityPosition.position.y;
       const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
@@ -714,9 +729,9 @@
         const stepX = entityPosition.position.x + intervalFactor * normalizedDirectionX * distanceToPlayer;
         const stepY = entityPosition.position.y + intervalFactor * normalizedDirectionY * distanceToPlayer;
         for (const obstacleEntity of obstacles) {
-          const obstaclePosition = obstacleEntity.getComponent(PositionComponent);
-          const collisionComponent = obstacleEntity.getComponent(CollisionComponent);
-          if (!collisionComponent)
+          const obstaclePosition = obstacleEntity.getComponent("PositionComponent");
+          const collisionComponent = obstacleEntity.getComponent("CollisionComponent");
+          if (!collisionComponent || !obstaclePosition)
             continue;
           if (this.isObstacleBetweenPoints(entityPosition.position, { x: stepX, y: stepY }, obstaclePosition.position, collisionComponent.collisionDetails)) {
             aiComponent.hasLineOfSight = false;
@@ -768,12 +783,16 @@
       super();
       this.entityManager = entityManager2;
       this.behaviorTrees = /* @__PURE__ */ new Map();
-      const aiEntities = entityManager2.getEntitiesByComponent(AIComponent);
-      const playerEntity = entityManager2.getEntitiesByComponent(PlayerComponent)[0];
+      const aiEntities = entityManager2.getEntitiesByComponent("AIComponent");
+      const playerEntity = entityManager2.getEntitiesByComponent("PlayerComponent")[0];
       for (const enemyEntity of aiEntities) {
-        const positionComponent = enemyEntity.getComponent(PositionComponent);
-        const playerPositionComponent = playerEntity.getComponent(PositionComponent);
-        const behaviorTree = this.createBehaviorTree(positionComponent.position, playerPositionComponent.position);
+        const positionComponent = enemyEntity.getComponent("PositionComponent");
+        if (!positionComponent)
+          continue;
+        const playerPositionComponent = playerEntity.getComponent("PositionComponent");
+        if (!playerPositionComponent)
+          continue;
+        const behaviorTree = this.createBehaviorTree(positionComponent.position, playerPositionComponent.position, enemyEntity, playerEntity);
         this.behaviorTrees.set(enemyEntity.name, behaviorTree);
       }
     }
@@ -786,8 +805,8 @@
     }
     render() {
     }
-    createBehaviorTree(aiPosition, playerPosition) {
-      const chasePlayerNode = new ChasePlayer(aiPosition, playerPosition);
+    createBehaviorTree(aiPosition, playerPosition, enemyEntity, playerEntity) {
+      const chasePlayerNode = new ChasePlayer(aiPosition, playerPosition, enemyEntity, playerEntity);
       const rootSelector = new SelectorNode([
         chasePlayerNode
       ]);
@@ -812,11 +831,13 @@
     preload() {
     }
     update(deltaTime, entityManager2) {
-      const entitiesWithAnimations = entityManager2.getEntitiesByComponent(AnimationComponent);
+      const entitiesWithAnimations = entityManager2.getEntitiesByComponent("AnimationComponent");
       for (const entity of entitiesWithAnimations) {
-        const animationComponent = entity.getComponent(AnimationComponent);
-        const renderComponent = entity.getComponent(RenderComponent);
-        const combatComponent = entity.getComponent(CombatComponent);
+        const animationComponent = entity.getComponent("AnimationComponent");
+        if (!animationComponent)
+          continue;
+        const renderComponent = entity.getComponent("RenderComponent");
+        const combatComponent = entity.getComponent("CombatComponent");
         if (!animationComponent.isPlaying || !renderComponent || !animationComponent.currentAnimation) {
           continue;
         }
@@ -833,11 +854,15 @@
           if (!animation.loop) {
             if (animationComponent.currentFrameIndex + frameIndexIncrement >= totalFrames - 1) {
               animationComponent.state = 1 /* Finished */;
-              if (combatComponent.isHurt) {
-                combatComponent.isHurt = false;
+              if (combatComponent) {
+                if (combatComponent.isHurt) {
+                  combatComponent.isHurt = false;
+                }
               }
               if (animationComponent.currentAnimation === "attack" || animationComponent.currentAnimation === "attack-up") {
-                combatComponent.isAttacking = false;
+                if (combatComponent) {
+                  combatComponent.isAttacking = false;
+                }
               }
               continue;
             }
@@ -869,12 +894,14 @@
     preload() {
     }
     update(deltaTime, entityManager2) {
-      const solidEntities = entityManager2.getEntitiesByComponent(SolidComponent);
-      const collisionEntities = entityManager2.getEntitiesByComponent(MovementComponent);
+      const solidEntities = entityManager2.getEntitiesByComponent("SolidComponent");
+      const collisionEntities = entityManager2.getEntitiesByComponent("MovementComponent");
       if (!collisionEntities)
         return;
       for (const entity of collisionEntities) {
-        const collisionComponent = entity.getComponent(CollisionComponent);
+        const collisionComponent = entity.getComponent("CollisionComponent");
+        if (!collisionComponent)
+          continue;
         const shapeA = collisionComponent.collisionType;
         if (shapeA === "box" /* BOX */)
           this.handleBoxCollision(entity, solidEntities);
@@ -885,7 +912,7 @@
     render() {
     }
     handleBoxCollision(entity, collisionEntities) {
-      const collisionComponent = entity.getComponent(CollisionComponent);
+      const collisionComponent = entity.getComponent("CollisionComponent");
       if (!collisionComponent)
         return;
       collisionComponent.collisionDetails = {
@@ -897,7 +924,7 @@
       for (const otherEntity of collisionEntities) {
         if (otherEntity === entity)
           continue;
-        const otherCollisionComponent = otherEntity.getComponent(CollisionComponent);
+        const otherCollisionComponent = otherEntity.getComponent("CollisionComponent");
         if (!otherCollisionComponent)
           continue;
         const shapeB = otherCollisionComponent.collisionType;
@@ -920,12 +947,24 @@
       return distanceSquared < radiusSum * radiusSum;
     }
     checkSATCollision(entityA, entityB) {
-      const collisionComponentA = entityA.getComponent(CollisionComponent);
-      const collisionComponentB = entityB.getComponent(CollisionComponent);
-      const positionComponentA = entityA.getComponent(PositionComponent);
-      const positionComponentB = entityB.getComponent(PositionComponent);
-      const renderComponentA = entityA.getComponent(RenderComponent);
-      const renderComponentB = entityB.getComponent(RenderComponent);
+      const collisionComponentA = entityA.getComponent("CollisionComponent");
+      if (!collisionComponentA)
+        return false;
+      const collisionComponentB = entityB.getComponent("CollisionComponent");
+      if (!collisionComponentB)
+        return false;
+      const positionComponentA = entityA.getComponent("PositionComponent");
+      if (!positionComponentA)
+        return false;
+      const positionComponentB = entityB.getComponent("PositionComponent");
+      if (!positionComponentB)
+        return false;
+      const renderComponentA = entityA.getComponent("RenderComponent");
+      if (!renderComponentA)
+        return false;
+      const renderComponentB = entityB.getComponent("RenderComponent");
+      if (!renderComponentB)
+        return false;
       const { width: collisionWidthA, height: collisionHeightA, offsetX: offsetXA, offsetY: offsetYA } = collisionComponentA;
       const { width: collisionWidthB, height: collisionHeightB, offsetX: offsetXB, offsetY: offsetYB } = collisionComponentB;
       const { width: renderWidthA, height: renderHeightA } = renderComponentA;
@@ -974,21 +1013,39 @@
     preload() {
     }
     update(deltaTime, entityManager2) {
-      const entitiesWithCombat = entityManager2.getEntitiesByComponent(CombatComponent);
+      const entitiesWithCombat = entityManager2.getEntitiesByComponent("CombatComponent");
       for (const attacker of entitiesWithCombat) {
-        const attackerCombat = attacker.getComponent(CombatComponent);
-        const attackerPosition = attacker.getComponent(PositionComponent).position;
-        const attackerAnimation = attacker.getComponent(AnimationComponent);
-        const attackerMovement = attacker.getComponent(MovementComponent);
-        if (!attackerCombat || !attackerCombat.isAttacking || !attackerAnimation) {
+        const attackerCombat = attacker.getComponent("CombatComponent");
+        if (!attackerCombat)
+          continue;
+        const attackerPosition = attacker.getComponent("PositionComponent")?.position;
+        if (!attackerPosition)
+          continue;
+        const attackerAnimation = attacker.getComponent("AnimationComponent");
+        const attackerMovement = attacker.getComponent("MovementComponent");
+        if (!attackerMovement)
+          continue;
+        const cooldownInterval = setInterval(() => {
+          if (attackerCombat.attackCooldown > 0) {
+            attackerCombat.attackCooldown--;
+          } else {
+            clearInterval(cooldownInterval);
+            attackerCombat.attackInitiated = false;
+            attackerCombat.isAttacking = false;
+          }
+        }, 1e3);
+        if (!attackerCombat || !attackerCombat.isAttacking || !attackerAnimation || attackerCombat.attackCooldown > 0) {
           continue;
         }
+        attackerCombat.attackCooldown = 100;
         let closestTarget = null;
         let closestDistanceSq = Infinity;
         for (const potentialTarget of entitiesWithCombat) {
           if (potentialTarget === attacker)
             continue;
-          const targetPosition = potentialTarget.getComponent(PositionComponent).position;
+          const targetPosition = potentialTarget.getComponent("PositionComponent")?.position;
+          if (!targetPosition)
+            continue;
           const diffX = targetPosition.x - attackerPosition.x;
           const diffY = targetPosition.y - attackerPosition.y;
           const distanceSq = diffX * diffX + diffY * diffY;
@@ -1010,9 +1067,9 @@
     render() {
     }
     handleAttack(attacker, target) {
-      const attackerCombat = attacker.getComponent(CombatComponent);
-      const targetCombat = target.getComponent(CombatComponent);
-      const targetAnimationComponent = target.getComponent(AnimationComponent);
+      const attackerCombat = attacker.getComponent("CombatComponent");
+      const targetCombat = target.getComponent("CombatComponent");
+      const targetAnimationComponent = target.getComponent("AnimationComponent");
       if (!attackerCombat || !targetCombat)
         return;
       if (!targetCombat.isDead)
@@ -1022,8 +1079,14 @@
       if (targetCombat.health <= 0) {
         if (!targetCombat.isDead) {
           targetCombat.isDead = true;
-          targetAnimationComponent.currentFrameIndex = 0;
-          targetAnimationComponent.playAnimation("death");
+          if (targetAnimationComponent) {
+            targetAnimationComponent.currentFrameIndex = 0;
+            targetAnimationComponent.playAnimation("death");
+          }
+          target.removeComponent("AIComponent");
+          target.removeComponent("MovementComponent");
+          target.removeComponent("CombatComponent");
+          console.log(target);
         }
       }
     }
@@ -1041,10 +1104,16 @@
     preload() {
     }
     update(deltaTime, entityManager2) {
-      const player = entityManager2.getEntitiesByComponent(PlayerComponent)[0];
-      const movementComponent = player.getComponent(MovementComponent);
-      const combatComponent = player.getComponent(CombatComponent);
-      const animationComponent = player.getComponent(AnimationComponent);
+      const player = entityManager2.getEntitiesByComponent("PlayerComponent")[0];
+      const movementComponent = player.getComponent("MovementComponent");
+      if (!movementComponent)
+        return;
+      const combatComponent = player.getComponent("CombatComponent");
+      if (!combatComponent)
+        return;
+      const animationComponent = player.getComponent("AnimationComponent");
+      if (!animationComponent)
+        return;
       if (!player)
         throw new Error("No player entity assigned.");
       if (!movementComponent)
@@ -1066,7 +1135,7 @@
         }
       }
       if (combatComponent) {
-        if (this.pressedKeys.has(" ") && !combatComponent.attackInitiated) {
+        if (this.pressedKeys.has(" ") && !combatComponent.attackInitiated && combatComponent.attackCooldown < 1) {
           animationComponent.currentFrameIndex = 0;
           combatComponent.attackInitiated = true;
           combatComponent.isAttacking = true;
@@ -1121,7 +1190,10 @@
       const playerEntity = entityManager2.getEntityByName("player");
       if (!playerEntity)
         return;
-      const { position: playerPosition } = playerEntity.getComponent(PositionComponent);
+      const playerPositionComponent = playerEntity.getComponent("PositionComponent");
+      if (!playerPositionComponent)
+        return;
+      const { position: playerPosition } = playerPositionComponent;
       this.updateStaticRenderingBatches(entityManager2);
       this.renderStaticLevelElements(playerPosition);
     }
@@ -1132,9 +1204,11 @@
     }
     updateStaticRenderingBatches(entityManager2) {
       this.staticRenderingBatches.clear();
-      const staticEntities = entityManager2.getEntitiesByComponents([SolidComponent, RenderComponent]);
+      const staticEntities = entityManager2.getEntitiesByComponents(["SolidComponent", "RenderComponent"]);
       for (const entity of staticEntities) {
-        const layerComponent = entity.getComponent(LayerComponent);
+        const layerComponent = entity.getComponent("LayerComponent");
+        if (!layerComponent)
+          continue;
         const layer = layerComponent ? layerComponent.layer : 0;
         if (!this.staticRenderingBatches.has(layer)) {
           this.staticRenderingBatches.set(layer, []);
@@ -1151,11 +1225,12 @@
       }
     }
     renderStaticEntity(entity, playerPosition) {
-      const { position } = entity.getComponent(PositionComponent);
-      const renderComponent = entity.getComponent(RenderComponent);
-      const solidComponent = entity.getComponent(SolidComponent);
-      if (!solidComponent)
+      const positionComponent = entity.getComponent("PositionComponent");
+      const renderComponent = entity.getComponent("RenderComponent");
+      const solidComponent = entity.getComponent("SolidComponent");
+      if (!solidComponent || !positionComponent || !renderComponent)
         return;
+      const { position } = positionComponent;
       const cameraX = playerPosition.x - this.cameraWidth / 2;
       const cameraY = playerPosition.y - this.cameraHeight / 2;
       const adjustedX = position.x - cameraX;
@@ -1232,7 +1307,8 @@
         currentFacingAngle: movementComponent.currentFacingAngle,
         isAttacking: combatComponent.isAttacking,
         animationState: animationComponent.state,
-        isHurt: combatComponent.isHurt
+        isHurt: combatComponent.isHurt,
+        attackCooldown: combatComponent.attackCooldown
       };
       let highestPriorityCondition = null;
       for (const condition of this.conditions) {
@@ -1258,39 +1334,47 @@
     preload() {
     }
     update(_, entityManager2) {
-      const movementEntities = entityManager2.getEntitiesByComponent(MovementComponent);
+      const movementEntities = entityManager2.getEntitiesByComponent("MovementComponent");
       for (const entity of movementEntities) {
-        const movementComponent = entity.getComponent(MovementComponent);
-        const positionComponent = entity.getComponent(PositionComponent);
-        const collisionComponent = entity.getComponent(CollisionComponent);
-        const animationComponent = entity.getComponent(AnimationComponent);
-        const renderComponent = entity.getComponent(RenderComponent);
-        const combatComponent = entity.getComponent(CombatComponent);
+        const movementComponent = entity.getComponent("MovementComponent");
+        if (!movementComponent)
+          continue;
+        const positionComponent = entity.getComponent("PositionComponent");
+        if (!positionComponent)
+          continue;
+        const collisionComponent = entity.getComponent("CollisionComponent");
+        const animationComponent = entity.getComponent("AnimationComponent");
+        const renderComponent = entity.getComponent("RenderComponent");
+        if (!renderComponent)
+          continue;
+        const combatComponent = entity.getComponent("CombatComponent");
         let xMovement = movementComponent.direction.x * movementComponent.moveSpeed;
         let yMovement = movementComponent.direction.y * movementComponent.moveSpeed;
-        if (!combatComponent.isDead) {
+        if (combatComponent && !combatComponent.isDead) {
           if (xMovement !== 0) {
             let newX = positionComponent.position.x - xMovement;
-            if (!collisionComponent.collisionDetails.right && xMovement < 0) {
+            if (collisionComponent && !collisionComponent.collisionDetails.right && xMovement < 0) {
               renderComponent.flipped = true;
               positionComponent.position.x = Math.floor(newX);
-            } else if (!collisionComponent.collisionDetails.left && xMovement > 0) {
+            } else if (collisionComponent && !collisionComponent.collisionDetails.left && xMovement > 0) {
               renderComponent.flipped = false;
               positionComponent.position.x = Math.ceil(newX);
             }
           }
           if (yMovement !== 0) {
             let newY = positionComponent.position.y + yMovement;
-            if (!collisionComponent.collisionDetails.top && yMovement < 0) {
+            if (collisionComponent && !collisionComponent.collisionDetails.top && yMovement < 0) {
               positionComponent.position.y = Math.floor(newY);
-            } else if (!collisionComponent.collisionDetails.bottom && yMovement > 0) {
+            } else if (collisionComponent && !collisionComponent.collisionDetails.bottom && yMovement > 0) {
               positionComponent.position.y = Math.ceil(newY);
             }
           }
           if (xMovement !== 0 || yMovement !== 0) {
             movementComponent.currentFacingAngle = Math.atan2(yMovement, xMovement) * 180 / Math.PI;
           }
-          AnimationController.playAnimation(animationComponent, movementComponent, combatComponent);
+          if (animationComponent) {
+            AnimationController.playAnimation(animationComponent, movementComponent, combatComponent);
+          }
         }
       }
     }
@@ -1329,9 +1413,11 @@
       const playerEntity = entityManager2.getEntityByName("player");
       if (!playerEntity)
         return;
-      const { position: playerPosition } = playerEntity.getComponent(PositionComponent);
+      const playerPositionComponent = playerEntity.getComponent("PositionComponent");
       this.updateAnimationRenderingBatches(entityManager2);
-      this.renderAnimationEntities(playerPosition);
+      if (playerPositionComponent) {
+        this.renderAnimationEntities(playerPositionComponent.position);
+      }
     }
     updateCamera(entityManager2) {
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1340,9 +1426,9 @@
     }
     updateAnimationRenderingBatches(entityManager2) {
       this.animationRenderingBatches.clear();
-      const animationEntities = entityManager2.getEntitiesByComponent(AnimationComponent);
+      const animationEntities = entityManager2.getEntitiesByComponent("AnimationComponent");
       for (const entity of animationEntities) {
-        const layerComponent = entity.getComponent(LayerComponent);
+        const layerComponent = entity.getComponent("LayerComponent");
         const layer = layerComponent ? layerComponent.layer : 0;
         if (!this.animationRenderingBatches.has(layer)) {
           this.animationRenderingBatches.set(layer, []);
@@ -1359,9 +1445,14 @@
       }
     }
     renderEntity(entity, playerPosition) {
-      const renderComponent = entity.getComponent(RenderComponent);
-      const positionComponent = entity.getComponent(PositionComponent);
-      const animationComponent = entity.getComponent(AnimationComponent);
+      const renderComponent = entity.getComponent("RenderComponent");
+      if (!renderComponent)
+        return;
+      const positionComponent = entity.getComponent("PositionComponent");
+      if (!positionComponent)
+        return;
+      const animationComponent = entity.getComponent("AnimationComponent");
+      const combatComponent = entity.getComponent("CombatComponent");
       if (animationComponent) {
         const animation = animationComponent.animations.get(animationComponent.currentAnimation);
         const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
@@ -1371,6 +1462,10 @@
         const cameraY = playerPosition.y - this.cameraHeight / 2;
         const adjustedX = positionComponent.position.x - cameraX;
         const adjustedY = positionComponent.position.y - cameraY;
+        if (combatComponent) {
+          this.ctx.fillStyle = "red";
+          this.ctx.fillRect(adjustedX + 13, adjustedY + 8, combatComponent.health / combatComponent.maxHealth * 7, 2);
+        }
         if (renderComponent.flipped) {
           this.ctx.save();
           this.ctx.scale(-1, 1);
@@ -1424,14 +1519,16 @@
   var animationSystem = new AnimationSystem();
   var combatSystem = new CombatSystem();
   createPlayerEntity(entityManager);
-  createEnemyEntity(entityManager);
+  for (let i = 1; i < 2; i++) {
+    createEnemyEntity(entityManager, `enemy${i}`, i / 2, i);
+  }
   function createEntitiesFromLevelArray(levelData, spriteSheets, entityManager2) {
     const entitiesToAdd = [];
     for (let i = 0; i < levelData.length; i++) {
       for (let j = 0; j < levelData[i].length; j++) {
         const [spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
         const spriteSheet = spriteSheets[spriteSheetIndex];
-        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)).tiled(true);
+        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(0).solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)).tiled(true);
         if (spriteSheet.includes("wall")) {
           tileEntity.collision("box" /* BOX */, i === 0 ? -11 : 11, j === 0 ? -11 : 11);
         }

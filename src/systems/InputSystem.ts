@@ -1,7 +1,6 @@
 import { AnimationComponent } from "../components/AnimationComponent";
 import { CombatComponent } from "../components/CombatCompontent";
 import { MovementComponent } from "../components/MovementComponent";
-import { PlayerComponent } from "../components/PlayerComponent";
 import { EntityManager } from "../entities/EntityManager";
 import { System } from "./System";
 
@@ -19,10 +18,13 @@ export class InputSystem extends System {
   preload() { }
 
   update(deltaTime: number, entityManager: EntityManager) {
-    const player = entityManager.getEntitiesByComponent(PlayerComponent)[0];
-    const movementComponent = player.getComponent(MovementComponent);
-    const combatComponent = player.getComponent(CombatComponent);
-    const animationComponent = player.getComponent(AnimationComponent);
+    const player = entityManager.getEntitiesByComponent("PlayerComponent")[0];
+    const movementComponent = player.getComponent<MovementComponent>("MovementComponent");
+    if (!movementComponent) return;
+    const combatComponent = player.getComponent<CombatComponent>("CombatComponent");
+    if (!combatComponent) return;
+    const animationComponent = player.getComponent<AnimationComponent>("AnimationComponent");
+    if (!animationComponent) return;
 
     if (!player) throw new Error('No player entity assigned.');
     if (!movementComponent) throw new Error('Player has no movement component.');
@@ -46,7 +48,7 @@ export class InputSystem extends System {
     }
 
     if (combatComponent) {
-      if (this.pressedKeys.has(' ') && !combatComponent.attackInitiated) {
+      if (this.pressedKeys.has(' ') && !combatComponent.attackInitiated && combatComponent.attackCooldown < 1) {
         animationComponent.currentFrameIndex = 0;
         combatComponent.attackInitiated = true;
         combatComponent.isAttacking = true;

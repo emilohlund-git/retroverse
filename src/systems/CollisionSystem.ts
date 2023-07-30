@@ -1,8 +1,6 @@
 import { CollisionComponent, CollisionType } from "../components/CollisionComponent";
-import { MovementComponent } from "../components/MovementComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { RenderComponent } from "../components/RenderComponent";
-import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { System } from "./System";
@@ -15,12 +13,13 @@ export class CollisionSystem extends System {
   preload() { }
 
   update(deltaTime: number, entityManager: EntityManager) {
-    const solidEntities = entityManager.getEntitiesByComponent(SolidComponent);
-    const collisionEntities = entityManager.getEntitiesByComponent(MovementComponent);
+    const solidEntities = entityManager.getEntitiesByComponent("SolidComponent");
+    const collisionEntities = entityManager.getEntitiesByComponent("MovementComponent");
     if (!collisionEntities) return;
 
     for (const entity of collisionEntities) {
-      const collisionComponent = entity.getComponent(CollisionComponent);
+      const collisionComponent = entity.getComponent<CollisionComponent>("CollisionComponent");
+      if (!collisionComponent) continue;
       const shapeA = collisionComponent.collisionType;
 
       if (shapeA === CollisionType.BOX) this.handleBoxCollision(entity, solidEntities);
@@ -31,7 +30,7 @@ export class CollisionSystem extends System {
   render() { }
 
   private handleBoxCollision(entity: Entity, collisionEntities: Entity[]) {
-    const collisionComponent = entity.getComponent(CollisionComponent);
+    const collisionComponent = entity.getComponent<CollisionComponent>("CollisionComponent");
     if (!collisionComponent) return;
 
     collisionComponent.collisionDetails = {
@@ -43,7 +42,7 @@ export class CollisionSystem extends System {
 
     for (const otherEntity of collisionEntities) {
       if (otherEntity === entity) continue;
-      const otherCollisionComponent = otherEntity.getComponent(CollisionComponent);
+      const otherCollisionComponent = otherEntity.getComponent<CollisionComponent>("CollisionComponent");
       if (!otherCollisionComponent) continue;
 
       const shapeB = otherCollisionComponent.collisionType;
@@ -74,12 +73,18 @@ export class CollisionSystem extends System {
 
   private checkSATCollision(entityA: Entity, entityB: Entity): boolean {
     // Get collision components and position components for both entities
-    const collisionComponentA = entityA.getComponent(CollisionComponent);
-    const collisionComponentB = entityB.getComponent(CollisionComponent);
-    const positionComponentA = entityA.getComponent(PositionComponent);
-    const positionComponentB = entityB.getComponent(PositionComponent);
-    const renderComponentA = entityA.getComponent(RenderComponent);
-    const renderComponentB = entityB.getComponent(RenderComponent);
+    const collisionComponentA = entityA.getComponent<CollisionComponent>("CollisionComponent");
+    if (!collisionComponentA) return false;
+    const collisionComponentB = entityB.getComponent<CollisionComponent>("CollisionComponent");
+    if (!collisionComponentB) return false;
+    const positionComponentA = entityA.getComponent<PositionComponent>("PositionComponent");
+    if (!positionComponentA) return false;
+    const positionComponentB = entityB.getComponent<PositionComponent>("PositionComponent");
+    if (!positionComponentB) return false;
+    const renderComponentA = entityA.getComponent<RenderComponent>("RenderComponent");
+    if (!renderComponentA) return false;
+    const renderComponentB = entityB.getComponent<RenderComponent>("RenderComponent");
+    if (!renderComponentB) return false;
 
     // Get dimensions and positions for both entities
     const { width: collisionWidthA, height: collisionHeightA, offsetX: offsetXA, offsetY: offsetYA } = collisionComponentA;

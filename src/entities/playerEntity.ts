@@ -15,7 +15,7 @@ animations.set(playerAttackUpAnimation.name, playerAttackUpAnimation);
 animations.set(playerHurtAnimation.name, playerHurtAnimation);
 animations.set(playerDeathAnimation.name, playerDeathAnimation);
 
-const excludedComponents = ['_DebugComponent', 'PlayerComponent', 'CollisionComponent', 'RenderComponent', 'MovementComponent', 'PositionComponent', 'AIComponent'];
+const excludedComponents = ['DebugComponent', 'PlayerComponent', 'CollisionComponent', 'RenderComponent', 'MovementComponent', 'PositionComponent', 'AIComponent'];
 
 export function createPlayerEntity(entityManager: EntityManager) {
   const playerEntity = EntityFactory.create()

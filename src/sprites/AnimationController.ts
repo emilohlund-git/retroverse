@@ -15,6 +15,7 @@ interface AnimationParams {
   isAttacking: boolean;
   animationState: AnimationState;
   isHurt: boolean;
+  attackCooldown: number;
 }
 
 export class AnimationController {
@@ -65,6 +66,7 @@ export class AnimationController {
       isAttacking: combatComponent.isAttacking,
       animationState: animationComponent.state,
       isHurt: combatComponent.isHurt,
+      attackCooldown: combatComponent.attackCooldown,
     };
 
     let highestPriorityCondition: AnimationCondition | null = null;

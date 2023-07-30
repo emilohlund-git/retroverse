@@ -16,20 +16,18 @@ export class DebugComponent extends Component {
   debug() {
     this.debugDiv.innerHTML = '';
 
-    const debugEntities = this.entityManager.getEntitiesByComponent(DebugComponent);
+    const debugEntities = this.entityManager.getEntitiesByComponent("DebugComponent");
     for (const entity of debugEntities) {
-      this.addDebugInfoForComponent(entity);
       const components = entity.getComponents();
       components.forEach((component) => {
         if (!this.excludedComponents.includes(component.constructor.name)) {
-          this.addDebugInfoForComponent(component);
+          this.addDebugInfoForComponent(component.constructor.name, component);
         }
       });
     }
   }
 
-  private addDebugInfoForComponent(component: object) {
-    const componentName = component.constructor.name;
+  private addDebugInfoForComponent(componentName: string, component: object) {
     const componentTitle = document.createElement('h2');
     componentTitle.innerText = componentName;
     this.debugDiv.appendChild(componentTitle);
@@ -38,14 +36,15 @@ export class DebugComponent extends Component {
   }
 
   private handleComponentProperties(component: Component) {
-    const componentKeys = Object.keys(component) as (keyof Component)[];
+    const componentKeys = Object.entries(component) as (keyof Component)[];
+    const debugSpan = document.createElement('span');
+    const toAdd = <any>[];
     for (const key of componentKeys) {
-      const value = component[key];
-      if (typeof value !== "function") {
-        const debugSpan = document.createElement('span');
-        debugSpan.innerText = `${key}: ${JSON.stringify(value, null, 2)}`;
-        this.debugDiv.appendChild(debugSpan);
-      }
+      if (key)
+        toAdd.push(key);
     }
+
+    debugSpan.innerHTML += JSON.stringify(toAdd, null, 3);
+    this.debugDiv.appendChild(debugSpan);
   }
 }

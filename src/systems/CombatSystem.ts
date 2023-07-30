@@ -16,17 +16,33 @@ export class CombatSystem extends System {
   }
 
   update(deltaTime: number, entityManager: EntityManager) {
-    const entitiesWithCombat = entityManager.getEntitiesByComponent(CombatComponent);
+    const entitiesWithCombat = entityManager.getEntitiesByComponent("CombatComponent");
 
     for (const attacker of entitiesWithCombat) {
-      const attackerCombat = attacker.getComponent(CombatComponent);
-      const attackerPosition = attacker.getComponent(PositionComponent).position;
-      const attackerAnimation = attacker.getComponent(AnimationComponent);
-      const attackerMovement = attacker.getComponent(MovementComponent);
+      const attackerCombat = attacker.getComponent<CombatComponent>("CombatComponent");
+      if (!attackerCombat) continue;
+      const attackerPosition = attacker.getComponent<PositionComponent>("PositionComponent")?.position;
+      if (!attackerPosition) continue;
+      const attackerAnimation = attacker.getComponent<AnimationComponent>("AnimationComponent");
+      const attackerMovement = attacker.getComponent<MovementComponent>("MovementComponent");
+      if (!attackerMovement) continue;
 
-      if (!attackerCombat || !attackerCombat.isAttacking || !attackerAnimation) {
+      const cooldownInterval = setInterval(() => {
+        if (attackerCombat.attackCooldown > 0) {
+          attackerCombat.attackCooldown--;
+        } else {
+          // Attack cooldown is over, reset attackInitiated and clear the interval
+          clearInterval(cooldownInterval);
+          attackerCombat.attackInitiated = false;
+          attackerCombat.isAttacking = false;
+        }
+      }, 1000);
+
+      if (!attackerCombat || !attackerCombat.isAttacking || !attackerAnimation || attackerCombat.attackCooldown > 0) {
         continue; // Skip entities that are not attacking or don't have the necessary components
       }
+
+      attackerCombat.attackCooldown = 100;
 
       let closestTarget: Entity | null = null;
       let closestDistanceSq: number = Infinity;
@@ -34,7 +50,8 @@ export class CombatSystem extends System {
       for (const potentialTarget of entitiesWithCombat) {
         if (potentialTarget === attacker) continue; // Skip the attacker itself.
 
-        const targetPosition = potentialTarget.getComponent(PositionComponent).position;
+        const targetPosition = potentialTarget.getComponent<PositionComponent>("PositionComponent")?.position;
+        if (!targetPosition) continue;
 
         // Correct the distanceSq calculation using squared differences in x and y coordinates
         const diffX = targetPosition.x - attackerPosition.x;
@@ -75,9 +92,9 @@ export class CombatSystem extends System {
   }
 
   private handleAttack(attacker: Entity, target: Entity) {
-    const attackerCombat = attacker.getComponent(CombatComponent);
-    const targetCombat = target.getComponent(CombatComponent);
-    const targetAnimationComponent = target.getComponent(AnimationComponent);
+    const attackerCombat = attacker.getComponent<CombatComponent>("CombatComponent");
+    const targetCombat = target.getComponent<CombatComponent>("CombatComponent");
+    const targetAnimationComponent = target.getComponent<AnimationComponent>("AnimationComponent");
 
     if (!attackerCombat || !targetCombat) return; // Make sure both entities have the CombatComponent.
 
@@ -91,8 +108,14 @@ export class CombatSystem extends System {
     if (targetCombat.health <= 0) {
       if (!targetCombat.isDead) {
         targetCombat.isDead = true;
-        targetAnimationComponent.currentFrameIndex = 0;
-        targetAnimationComponent.playAnimation("death");
+        if (targetAnimationComponent) {
+          targetAnimationComponent.currentFrameIndex = 0;
+          targetAnimationComponent.playAnimation("death");
+        }
+        target.removeComponent("AIComponent");
+        target.removeComponent("MovementComponent");
+        target.removeComponent("CombatComponent");
+        console.log(target);
       }
     }
   }

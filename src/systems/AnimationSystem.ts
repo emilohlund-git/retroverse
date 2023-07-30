@@ -20,12 +20,13 @@ export class AnimationSystem extends System {
   preload() {/* */ }
 
   update(deltaTime: number, entityManager: EntityManager) {
-    const entitiesWithAnimations = entityManager.getEntitiesByComponent(AnimationComponent);
+    const entitiesWithAnimations = entityManager.getEntitiesByComponent("AnimationComponent");
 
     for (const entity of entitiesWithAnimations) {
-      const animationComponent = entity.getComponent(AnimationComponent);
-      const renderComponent = entity.getComponent(RenderComponent);
-      const combatComponent = entity.getComponent(CombatComponent);
+      const animationComponent = entity.getComponent<AnimationComponent>("AnimationComponent");
+      if (!animationComponent) continue;
+      const renderComponent = entity.getComponent<RenderComponent>("RenderComponent");
+      const combatComponent = entity.getComponent<CombatComponent>("CombatComponent");
 
       if (!animationComponent.isPlaying || !renderComponent || !animationComponent.currentAnimation) {
         continue;
@@ -50,13 +51,17 @@ export class AnimationSystem extends System {
           if (animationComponent.currentFrameIndex + frameIndexIncrement >= totalFrames - 1) {
             animationComponent.state = AnimationState.Finished;
 
-            if (combatComponent.isHurt) {
-              combatComponent.isHurt = false;
+            if (combatComponent) {
+              if (combatComponent.isHurt) {
+                combatComponent.isHurt = false;
+              }
             }
 
             if (animationComponent.currentAnimation === "attack" ||
               animationComponent.currentAnimation === "attack-up") {
-              combatComponent.isAttacking = false;
+              if (combatComponent) {
+                combatComponent.isAttacking = false;
+              }
             }
 
             continue;

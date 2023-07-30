@@ -1,6 +1,4 @@
 import { DebugComponent } from "./components/DebugComponent";
-import { PlayerComponent } from "./components/PlayerComponent";
-import { RenderComponent } from "./components/RenderComponent";
 import { EntityManager } from "./entities/EntityManager";
 import { System } from "./systems/System";
 
@@ -36,8 +34,8 @@ export class Game {
   }
 
   private debug() {
-    const entity = this.entityManager.getEntitiesByComponent(PlayerComponent)[0];
-    const debugComponent = entity.getComponent(DebugComponent);
+    const entity = this.entityManager.getEntitiesByComponent("PlayerComponent")[0];
+    const debugComponent = entity.getComponent<DebugComponent>("DebugComponent");
     if (debugComponent) {
       debugComponent.debug();
     }
@@ -45,7 +43,7 @@ export class Game {
 
   public run() {
     for (const system of this.systems) {
-      system.preload(this.entityManager.getEntitiesByComponent(RenderComponent));
+      system.preload(this.entityManager.getEntitiesByComponent("RenderComponent"));
     }
     this.gameLoop();
   }

@@ -1,3 +1,3 @@
 {
-  "conventionalCommits.scopes": ["AISystem", "RenderSystem"]
+  "conventionalCommits.scopes": ["AISystem", "RenderSystem", "CombatSystem"]
 }

@@ -1,4 +1,5 @@
 import { AnimationComponent } from "../components/AnimationComponent";
+import { CombatComponent } from "../components/CombatCompontent";
 import { LayerComponent } from "../components/LayerComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { RenderComponent } from "../components/RenderComponent";
@@ -39,10 +40,12 @@ export class RenderSystem extends System {
     const playerEntity = entityManager.getEntityByName('player');
     if (!playerEntity) return;
 
-    const { position: playerPosition } = playerEntity.getComponent(PositionComponent);
+    const playerPositionComponent = playerEntity.getComponent<PositionComponent>("PositionComponent");
 
     this.updateAnimationRenderingBatches(entityManager);
-    this.renderAnimationEntities(playerPosition);
+    if (playerPositionComponent) {
+      this.renderAnimationEntities(playerPositionComponent.position);
+    }
   }
 
   private updateCamera(entityManager: EntityManager) {
@@ -54,10 +57,10 @@ export class RenderSystem extends System {
   private updateAnimationRenderingBatches(entityManager: EntityManager) {
     this.animationRenderingBatches.clear();
 
-    const animationEntities = entityManager.getEntitiesByComponent(AnimationComponent);
+    const animationEntities = entityManager.getEntitiesByComponent("AnimationComponent");
 
     for (const entity of animationEntities) {
-      const layerComponent = entity.getComponent(LayerComponent);
+      const layerComponent = entity.getComponent<LayerComponent>("LayerComponent");
       const layer = layerComponent ? layerComponent.layer : 0;
 
       if (!this.animationRenderingBatches.has(layer)) {
@@ -79,9 +82,13 @@ export class RenderSystem extends System {
   }
 
   private renderEntity(entity: Entity, playerPosition: Vector2D) {
-    const renderComponent = entity.getComponent(RenderComponent);
-    const positionComponent = entity.getComponent(PositionComponent);
-    const animationComponent = entity.getComponent(AnimationComponent);
+    const renderComponent = entity.getComponent<RenderComponent>("RenderComponent");
+    if (!renderComponent) return;
+    const positionComponent = entity.getComponent<PositionComponent>("PositionComponent");
+    if (!positionComponent) return;
+    const animationComponent = entity.getComponent<AnimationComponent>("AnimationComponent");
+
+    const combatComponent = entity.getComponent<CombatComponent>("CombatComponent");
 
     if (animationComponent) {
       const animation = animationComponent.animations.get(animationComponent.currentAnimation);
@@ -92,6 +99,11 @@ export class RenderSystem extends System {
       const cameraY = playerPosition.y - this.cameraHeight / 2;
       const adjustedX = (positionComponent.position.x - cameraX);
       const adjustedY = (positionComponent.position.y - cameraY);
+
+      if (combatComponent) {
+        this.ctx.fillStyle = "red"
+        this.ctx.fillRect(adjustedX + 13, adjustedY + 8, (combatComponent.health / combatComponent.maxHealth) * 7, 2);
+      }
 
       if (renderComponent.flipped) {
         this.ctx.save();
