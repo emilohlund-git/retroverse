@@ -3,6 +3,7 @@
     "AISystem",
     "RenderSystem",
     "CombatSystem",
-    "Components"
+    "Components",
+    "InventorySystem"
   ]
 }
