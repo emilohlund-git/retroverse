@@ -1,12 +1,15 @@
 import { AnimationComponent } from "../components/AnimationComponent";
+import { LayerComponent } from "../components/LayerComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { RenderComponent } from "../components/RenderComponent";
-import { SolidComponent } from "../components/SolidComponent";
+import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
+import { Vector2D } from "../utils/Vector2D";
 import { System } from "./System";
 
 export class RenderSystem extends System {
-  private canvas = document.createElement('canvas');
+  private animationRenderingBatches: Map<number, Entity[]> = new Map();
+  private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private cameraWidth: number = 100;
   private cameraHeight: number = 90;
@@ -14,102 +17,110 @@ export class RenderSystem extends System {
 
   constructor(width: number, height: number) {
     super();
-    if (!this.canvas) throw new Error('Failed to initialize game canvas.');
-    const ctx = this.canvas.getContext('2d');
+    const viewport = document.getElementById("viewport");
+    if (!viewport) throw new Error("Viewport missing.");
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    if (!canvas) throw new Error('Failed to initialize game canvas.');
+    const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to initialize canvas context.');
     this.ctx = ctx;
-
-    this.canvas.width = width;
-    this.canvas.height = height;
-
-    document.body.appendChild(this.canvas);
+    this.canvas = canvas;
+    viewport.appendChild(canvas);
   }
 
   preload() { }
 
   update(_: number, entityManager: EntityManager): void {
-    // Update the camera position here (you can use the player's position as the camera position, for example)
+    this.render();
+    this.updateCamera(entityManager);
+
     const playerEntity = entityManager.getEntityByName('player');
     if (!playerEntity) return;
 
-    const playerPositionComponent = playerEntity.getComponent(PositionComponent);
+    const { position: playerPosition } = playerEntity.getComponent(PositionComponent);
 
-    const cameraX = playerPositionComponent.position.x - this.cameraWidth / 2;
-    const cameraY = playerPositionComponent.position.y - this.cameraHeight / 2;
+    this.updateAnimationRenderingBatches(entityManager);
+    this.renderAnimationEntities(playerPosition);
+  }
 
-    // Clear the canvas
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
+  private updateCamera(entityManager: EntityManager) {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset the transformation matrix
     this.ctx.imageSmoothingEnabled = false;
-    this.ctx.scale(this.zoomFactor, this.zoomFactor); // Apply zoom
+    this.ctx.scale(this.zoomFactor, this.zoomFactor);
+  }
+
+  private updateAnimationRenderingBatches(entityManager: EntityManager) {
+    this.animationRenderingBatches.clear();
 
     const animationEntities = entityManager.getEntitiesByComponent(AnimationComponent);
-    const solidEntities = entityManager.getEntitiesByComponent(SolidComponent);
 
-    for (const entity of solidEntities) {
-      const renderComponent = entity.getComponent(RenderComponent);
-      const positionComponent = entity.getComponent(PositionComponent);
-      const solidComponent = entity.getComponent(SolidComponent);
+    for (const entity of animationEntities) {
+      const layerComponent = entity.getComponent(LayerComponent);
+      const layer = layerComponent ? layerComponent.layer : 0;
 
+      if (!this.animationRenderingBatches.has(layer)) {
+        this.animationRenderingBatches.set(layer, []);
+      }
+
+      this.animationRenderingBatches.get(layer)?.push(entity);
+    }
+  }
+
+  private renderAnimationEntities(playerPosition: Vector2D) {
+    const sortedBatches = Array.from(this.animationRenderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
+
+    for (const [_, entities] of sortedBatches) {
+      for (const entity of entities) {
+        this.renderEntity(entity, playerPosition);
+      }
+    }
+  }
+
+  private renderEntity(entity: Entity, playerPosition: Vector2D) {
+    const renderComponent = entity.getComponent(RenderComponent);
+    const positionComponent = entity.getComponent(PositionComponent);
+    const animationComponent = entity.getComponent(AnimationComponent);
+
+    if (animationComponent) {
+      const animation = animationComponent.animations.get(animationComponent.currentAnimation);
+      const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
+      if (!currentAnimationFrame) return;
+
+      const cameraX = playerPosition.x - this.cameraWidth / 2;
+      const cameraY = playerPosition.y - this.cameraHeight / 2;
       const adjustedX = (positionComponent.position.x - cameraX);
       const adjustedY = (positionComponent.position.y - cameraY);
 
-      this.ctx.drawImage(
-        solidComponent.spriteData.image,
-        solidComponent.spriteData.x,
-        solidComponent.spriteData.y,
-        renderComponent.width,
-        renderComponent.height,
-        adjustedX,
-        adjustedY,
-        renderComponent.width,
-        renderComponent.height,
-      );
-    }
-
-    for (const entity of animationEntities) {
-      const renderComponent = entity.getComponent(RenderComponent);
-      const positionComponent = entity.getComponent(PositionComponent);
-      const animationComponent = entity.getComponent(AnimationComponent);
-
-      if (animationComponent) {
-        const animation = animationComponent.animations.get(animationComponent.currentAnimation);
-        const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
-        if (!currentAnimationFrame) return;
-
-        const adjustedX = (positionComponent.position.x - cameraX);
-        const adjustedY = (positionComponent.position.y - cameraY);
-
-        if (renderComponent.flipped) {
-          this.ctx.save();
-          this.ctx.scale(-1, 1);
-          this.ctx.drawImage(
-            currentAnimationFrame.image,
-            currentAnimationFrame.x,
-            currentAnimationFrame.y,
-            renderComponent.width,
-            renderComponent.height,
-            -adjustedX - renderComponent.width,
-            adjustedY,
-            renderComponent.width,
-            renderComponent.height,
-          );
-          this.ctx.restore();
-        } else {
-          // No flip, draw as usual
-          this.ctx.drawImage(
-            currentAnimationFrame.image,
-            currentAnimationFrame.x,
-            currentAnimationFrame.y,
-            renderComponent.width,
-            renderComponent.height,
-            adjustedX,
-            adjustedY,
-            renderComponent.width,
-            renderComponent.height,
-          );
-        }
+      if (renderComponent.flipped) {
+        this.ctx.save();
+        this.ctx.scale(-1, 1);
+        this.ctx.drawImage(
+          currentAnimationFrame.image,
+          currentAnimationFrame.x,
+          currentAnimationFrame.y,
+          renderComponent.width,
+          renderComponent.height,
+          -adjustedX - renderComponent.width,
+          adjustedY,
+          renderComponent.width,
+          renderComponent.height,
+        );
+        this.ctx.restore();
+      } else {
+        // No flip, draw as usual
+        this.ctx.drawImage(
+          currentAnimationFrame.image,
+          currentAnimationFrame.x,
+          currentAnimationFrame.y,
+          renderComponent.width,
+          renderComponent.height,
+          adjustedX,
+          adjustedY,
+          renderComponent.width,
+          renderComponent.height,
+        );
       }
     }
   }

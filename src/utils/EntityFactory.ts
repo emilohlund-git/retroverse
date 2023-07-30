@@ -3,6 +3,7 @@ import { AnimationComponent, AnimationState } from "../components/AnimationCompo
 import { CollisionComponent, CollisionType } from "../components/CollisionComponent";
 import { CombatComponent } from "../components/CombatCompontent";
 import { DebugComponent } from "../components/DebugComponent";
+import { LayerComponent } from "../components/LayerComponent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PlayerComponent } from "../components/PlayerComponent";
 import { PositionComponent } from "../components/PositionComponent";
@@ -71,6 +72,11 @@ export class EntityFactory {
 
   movement(movement: Vector2D, moveSpeed: number): this {
     this.entity.addComponent(new MovementComponent(movement, moveSpeed));
+    return this;
+  }
+
+  layer(layer: number): this {
+    this.entity.addComponent(new LayerComponent(layer));
     return this;
   }
 

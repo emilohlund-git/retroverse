@@ -90,10 +90,10 @@ export class CollisionSystem extends System {
     const { x: xB, y: yB } = positionComponentB.position;
 
     // Calculate half-width and half-height for both entities
-    const halfWidthA = (collisionWidthA || renderWidthA) * 0.5;
-    const halfHeightA = (collisionHeightA || renderHeightA) * 0.5;
-    const halfWidthB = (collisionWidthB || renderWidthB) * 0.5;
-    const halfHeightB = (collisionHeightB || renderHeightB) * 0.5;
+    const halfWidthA = (collisionWidthA ?? renderWidthA) * 0.5;
+    const halfHeightA = (collisionHeightA ?? renderHeightA) * 0.5;
+    const halfWidthB = (collisionWidthB ?? renderWidthB) * 0.5;
+    const halfHeightB = (collisionHeightB ?? renderHeightB) * 0.5;
 
     // Calculate centers of both entities
     const centerA = { x: xA + halfWidthA + offsetXA, y: yA + halfHeightA + offsetYA };

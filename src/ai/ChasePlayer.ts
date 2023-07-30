@@ -1,10 +1,12 @@
 import { AIComponent } from "../components/AIComponent";
 import { CollisionComponent, CollisionDetails } from "../components/CollisionComponent";
+import { CombatComponent } from "../components/CombatCompontent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { SolidComponent } from "../components/SolidComponent";
 import { EntityManager } from "../entities/EntityManager";
 import { Vector2D } from "../utils/Vector2D";
+import { clamp } from "../utils/math";
 import { BehaviorNode, BehaviorStatus } from "./BehaviorTree";
 
 export class ChasePlayer implements BehaviorNode {
@@ -24,33 +26,42 @@ export class ChasePlayer implements BehaviorNode {
     }
 
     const playerPositionComponent = playerEntity.getComponent(PositionComponent);
+    const playerCombatComponent = playerEntity.getComponent(CombatComponent);
 
     for (const enemyEntity of enemyEntities) {
       const aiComponent = enemyEntity.getComponent(AIComponent);
       const positionComponent = enemyEntity.getComponent(PositionComponent);
       const movementComponent = enemyEntity.getComponent(MovementComponent);
+      const combatComponent = enemyEntity.getComponent(CombatComponent);
 
       const directionX = playerPositionComponent.position.x - positionComponent.position.x;
       const directionY = playerPositionComponent.position.y - positionComponent.position.y;
 
       const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
 
-      if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent)) {
+      if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent) &&
+        !playerCombatComponent.isDead) {
         if (distanceToPlayer < 10) {
           aiComponent.isChasing = false;
+          combatComponent.isAttacking = true;
           movementComponent.direction.x = 0;
           movementComponent.direction.y = 0;
           return 'SUCCESS';
         } else {
           aiComponent.isChasing = true;
-          movementComponent.direction.x = -directionX / distanceToPlayer;
-          movementComponent.direction.y = directionY / distanceToPlayer;
+          combatComponent.attackInitiated = false;
+          combatComponent.isAttacking = false;
+          // Normalize the direction vector to maintain equal speed in all directions
+          movementComponent.direction.x = clamp(-directionX, -1, 1);
+          movementComponent.direction.y = clamp(directionY, -1, 1);
         }
       } else {
         aiComponent.isChasing = false;
+        combatComponent.attackInitiated = false;
+        combatComponent.isAttacking = false;
         movementComponent.direction.x = 0;
         movementComponent.direction.y = 0;
-        return 'SUCCESS'
+        return 'SUCCESS';
       }
     }
     return 'RUNNING';

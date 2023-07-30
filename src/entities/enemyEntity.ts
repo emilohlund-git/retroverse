@@ -15,16 +15,19 @@ animations.set(enemyAttackUpAnimation.name, enemyAttackUpAnimation);
 animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
 animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
 
+const excludedComponents = ['_DebugComponent', 'PlayerComponent', 'CollisionComponent', 'RenderComponent', 'MovementComponent', 'PositionComponent', 'AIComponent'];
+
 export function createEnemyEntity(entityManager: EntityManager) {
   const enemyEntity = EntityFactory.create()
     .name('enemy')
-    .position(new Vector2D(TILE_WIDTH * 7, TILE_HEIGHT * 7))
+    .position(new Vector2D(TILE_WIDTH * 4, TILE_HEIGHT * 1))
     .size(32, 32)
     .movement(new Vector2D(0, 0), 1)
     .collision(CollisionType.BOX)
     .combat()
     .ai(50)
     .animations(animations)
+    .layer(0)
     .build();
 
   entityManager.addEntity(enemyEntity);

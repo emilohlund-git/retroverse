@@ -50,13 +50,13 @@ export class AnimationSystem extends System {
           if (animationComponent.currentFrameIndex + frameIndexIncrement >= totalFrames - 1) {
             animationComponent.state = AnimationState.Finished;
 
+            if (combatComponent.isHurt) {
+              combatComponent.isHurt = false;
+            }
+
             if (animationComponent.currentAnimation === "attack" ||
               animationComponent.currentAnimation === "attack-up") {
               combatComponent.isAttacking = false;
-            }
-
-            if (combatComponent.isHurt) {
-              combatComponent.isHurt = false;
             }
 
             continue;

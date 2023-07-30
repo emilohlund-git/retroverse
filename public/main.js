@@ -324,7 +324,7 @@
 
   // src/components/CombatCompontent.ts
   var CombatComponent = class extends Component {
-    constructor(isAttacking = false, attackInitiated = false, isHurt = false, attackRange = 50, attackPower = 5, defense = 1, health = 20, isDead = false, attackCooldown = 20) {
+    constructor(isAttacking = false, attackInitiated = false, isHurt = false, attackRange = 10, attackPower = 5, defense = 4, health = 20, isDead = false, attackCooldown = 20) {
       super();
       this.isAttacking = isAttacking;
       this.attackInitiated = attackInitiated;
@@ -335,6 +335,14 @@
       this.health = health;
       this.isDead = isDead;
       this.attackCooldown = attackCooldown;
+    }
+  };
+
+  // src/components/LayerComponent.ts
+  var LayerComponent = class extends Component {
+    constructor(layer = 0) {
+      super();
+      this.layer = layer;
     }
   };
 
@@ -430,6 +438,10 @@
       this.entity.addComponent(new MovementComponent(movement, moveSpeed));
       return this;
     }
+    layer(layer) {
+      this.entity.addComponent(new LayerComponent(layer));
+      return this;
+    }
     player() {
       this.entity.addComponent(new PlayerComponent());
       return this;
@@ -464,6 +476,16 @@
       this.x = x;
       this.y = y;
     }
+    get length() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    normalize() {
+      const length = this.length;
+      if (length !== 0) {
+        this.x /= length;
+        this.y /= length;
+      }
+    }
   };
 
   // src/utils/constants.ts
@@ -483,7 +505,7 @@
   animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
   animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
   function createEnemyEntity(entityManager2) {
-    const enemyEntity = EntityFactory.create().name("enemy").position(new Vector2D(TILE_WIDTH * 7, TILE_HEIGHT * 7)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).build();
+    const enemyEntity = EntityFactory.create().name("enemy").position(new Vector2D(TILE_WIDTH * 4, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).combat().ai(50).animations(animations).layer(0).build();
     entityManager2.addEntity(enemyEntity);
   }
 
@@ -491,9 +513,13 @@
   SpriteSheetParser.extractSprites("player", "player-idle", 32, 32, 512, 128, "./assets/spritesheets/player/MiniFantasy_CreaturesHumanBaseIdle.png");
   SpriteSheetParser.extractSprites("player", "player-run", 32, 32, 128, 128, "./assets/spritesheets/player/MiniFantasy_CreaturesHumanBaseWalk.png");
   SpriteSheetParser.extractSprites("player", "player-attack", 32, 32, 128, 128, "./assets/spritesheets/player/MiniFantasy_CreaturesHumanBaseAttack.png");
+  SpriteSheetParser.extractSprites("player", "player-hurt", 32, 32, 128, 128, "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseDmg.png");
+  SpriteSheetParser.extractSprites("player", "player-die", 32, 32, 384, 32, "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseSoulDie.png");
   var playerIdleSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-idle");
   var playerRunSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-run");
   var playerAttackSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-attack");
+  var playerHurtSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-hurt");
+  var playerDieSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-die");
   var playerIdleAnimation = new Animation("idle", [
     playerIdleSpriteSheet[1][0],
     playerIdleSpriteSheet[1][1],
@@ -538,9 +564,30 @@
     playerAttackSpriteSheet[3][2],
     playerAttackSpriteSheet[3][3]
   ], 0.01, false);
+  var playerHurtAnimation = new Animation("hurt", [
+    playerHurtSpriteSheet[1][0],
+    playerHurtSpriteSheet[1][1],
+    playerHurtSpriteSheet[1][2],
+    playerHurtSpriteSheet[1][3]
+  ], 0.01, false);
+  var playerDeathAnimation = new Animation("death", [
+    playerDieSpriteSheet[0][0],
+    playerDieSpriteSheet[0][1],
+    playerDieSpriteSheet[0][2],
+    playerDieSpriteSheet[0][3],
+    playerDieSpriteSheet[0][4],
+    playerDieSpriteSheet[0][5],
+    playerDieSpriteSheet[0][6],
+    playerDieSpriteSheet[0][7],
+    playerDieSpriteSheet[0][8],
+    playerDieSpriteSheet[0][9],
+    playerDieSpriteSheet[0][10],
+    playerDieSpriteSheet[0][11],
+    playerDieSpriteSheet[0][12],
+    playerDieSpriteSheet[0][13]
+  ], 0.01, false);
 
   // src/entities/playerEntity.ts
-  var excludedComponents = ["_DebugComponent", "PlayerComponent", "CollisionComponent"];
   var animations2 = /* @__PURE__ */ new Map();
   animations2.set(playerIdleAnimation.name, playerIdleAnimation);
   animations2.set(playerRunAnimation.name, playerRunAnimation);
@@ -548,10 +595,49 @@
   animations2.set(playerIdleUpAnimation.name, playerIdleUpAnimation);
   animations2.set(playerAttackAnimation.name, playerAttackAnimation);
   animations2.set(playerAttackUpAnimation.name, playerAttackUpAnimation);
+  animations2.set(playerHurtAnimation.name, playerHurtAnimation);
+  animations2.set(playerDeathAnimation.name, playerDeathAnimation);
+  var excludedComponents = ["_DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
   function createPlayerEntity(entityManager2) {
-    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 5, TILE_HEIGHT * 5)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).player().debug(entityManager2, excludedComponents).combat().animations(animations2).build();
+    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */).player().combat().animations(animations2).layer(1).debug(entityManager2, excludedComponents).build();
     entityManager2.addEntity(playerEntity);
   }
+
+  // src/levels/level.ts
+  var levelOne = {
+    spriteSheets: [
+      "floor-tiles",
+      "wall-tiles"
+    ],
+    // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
+    data: [
+      [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 3, 1]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 1, 1], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 1, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 3, 2], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 3, 2]],
+      [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 3, 3]]
+    ]
+  };
 
   // src/ai/BehaviorTree.ts
   var BehaviorTree = class {
@@ -561,6 +647,11 @@
     tick(entityManager2) {
       return this.rootNode.tick(entityManager2);
     }
+  };
+
+  // src/utils/math.ts
+  var clamp = (number, min, max) => {
+    return Math.max(min, Math.min(number, max));
   };
 
   // src/ai/ChasePlayer.ts
@@ -576,26 +667,33 @@
         return "FAILURE";
       }
       const playerPositionComponent = playerEntity.getComponent(PositionComponent);
+      const playerCombatComponent = playerEntity.getComponent(CombatComponent);
       for (const enemyEntity of enemyEntities) {
         const aiComponent = enemyEntity.getComponent(AIComponent);
         const positionComponent = enemyEntity.getComponent(PositionComponent);
         const movementComponent = enemyEntity.getComponent(MovementComponent);
+        const combatComponent = enemyEntity.getComponent(CombatComponent);
         const directionX = playerPositionComponent.position.x - positionComponent.position.x;
         const directionY = playerPositionComponent.position.y - positionComponent.position.y;
         const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
-        if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager2, positionComponent, playerPositionComponent, aiComponent)) {
+        if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager2, positionComponent, playerPositionComponent, aiComponent) && !playerCombatComponent.isDead) {
           if (distanceToPlayer < 10) {
             aiComponent.isChasing = false;
+            combatComponent.isAttacking = true;
             movementComponent.direction.x = 0;
             movementComponent.direction.y = 0;
             return "SUCCESS";
           } else {
             aiComponent.isChasing = true;
-            movementComponent.direction.x = -directionX / distanceToPlayer;
-            movementComponent.direction.y = directionY / distanceToPlayer;
+            combatComponent.attackInitiated = false;
+            combatComponent.isAttacking = false;
+            movementComponent.direction.x = clamp(-directionX, -1, 1);
+            movementComponent.direction.y = clamp(directionY, -1, 1);
           }
         } else {
           aiComponent.isChasing = false;
+          combatComponent.attackInitiated = false;
+          combatComponent.isAttacking = false;
           movementComponent.direction.x = 0;
           movementComponent.direction.y = 0;
           return "SUCCESS";
@@ -735,11 +833,11 @@
           if (!animation.loop) {
             if (animationComponent.currentFrameIndex + frameIndexIncrement >= totalFrames - 1) {
               animationComponent.state = 1 /* Finished */;
-              if (animationComponent.currentAnimation === "attack" || animationComponent.currentAnimation === "attack-up") {
-                combatComponent.isAttacking = false;
-              }
               if (combatComponent.isHurt) {
                 combatComponent.isHurt = false;
+              }
+              if (animationComponent.currentAnimation === "attack" || animationComponent.currentAnimation === "attack-up") {
+                combatComponent.isAttacking = false;
               }
               continue;
             }
@@ -834,10 +932,10 @@
       const { width: renderWidthB, height: renderHeightB } = renderComponentB;
       const { x: xA, y: yA } = positionComponentA.position;
       const { x: xB, y: yB } = positionComponentB.position;
-      const halfWidthA = (collisionWidthA || renderWidthA) * 0.5;
-      const halfHeightA = (collisionHeightA || renderHeightA) * 0.5;
-      const halfWidthB = (collisionWidthB || renderWidthB) * 0.5;
-      const halfHeightB = (collisionHeightB || renderHeightB) * 0.5;
+      const halfWidthA = (collisionWidthA ?? renderWidthA) * 0.5;
+      const halfHeightA = (collisionHeightA ?? renderHeightA) * 0.5;
+      const halfWidthB = (collisionWidthB ?? renderWidthB) * 0.5;
+      const halfHeightB = (collisionHeightB ?? renderHeightB) * 0.5;
       const centerA = { x: xA + halfWidthA + offsetXA, y: yA + halfHeightA + offsetYA };
       const centerB = { x: xB + halfWidthB + offsetXB, y: yB + halfHeightB + offsetYB };
       const dx = centerA.x - centerB.x;
@@ -891,11 +989,14 @@
           if (potentialTarget === attacker)
             continue;
           const targetPosition = potentialTarget.getComponent(PositionComponent).position;
-          const distanceSq = (targetPosition.x - attackerPosition.x) ** 2 + (targetPosition.y - attackerPosition.y) ** 2;
-          if (distanceSq < attackerCombat.attackRange ** 1 && distanceSq < closestDistanceSq) {
-            const angleToTarget = -Math.atan2(targetPosition.y - attackerPosition.y, targetPosition.x - attackerPosition.x);
-            const angleDifference = -Math.abs(angleToTarget - attackerMovement.currentFacingAngle);
-            if (angleDifference <= Math.PI / 180 * 20) {
+          const diffX = targetPosition.x - attackerPosition.x;
+          const diffY = targetPosition.y - attackerPosition.y;
+          const distanceSq = diffX * diffX + diffY * diffY;
+          if (distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
+            const angleToTarget = Math.atan2(targetPosition.y - attackerPosition.y, targetPosition.x - attackerPosition.x);
+            const angleDifference = angleToTarget - attackerMovement.currentFacingAngle;
+            const adjustedAngleDifference = (angleDifference + Math.PI) % (2 * Math.PI) - Math.PI;
+            if (Math.abs(adjustedAngleDifference) >= Math.PI / 180 * 20 && (attackerMovement.currentFacingAngle >= 0 && diffX > 0 || attackerMovement.currentFacingAngle > 0 && diffX > 0)) {
               closestTarget = potentialTarget;
               closestDistanceSq = distanceSq;
             }
@@ -917,16 +1018,14 @@
       if (!targetCombat.isDead)
         targetCombat.isHurt = true;
       const damage = Math.max(attackerCombat.attackPower - targetCombat.defense, 0);
-      targetCombat.health -= damage;
+      targetCombat.health = targetCombat.health - damage;
       if (targetCombat.health <= 0) {
         if (!targetCombat.isDead) {
           targetCombat.isDead = true;
           targetAnimationComponent.currentFrameIndex = 0;
           targetAnimationComponent.playAnimation("death");
-          console.log(target.name + " died.");
         }
       }
-      attackerCombat.isAttacking = false;
     }
   };
 
@@ -988,6 +1087,99 @@
     }
     handleBlur() {
       this.pressedKeys.clear();
+    }
+  };
+
+  // src/systems/LevelSystem.ts
+  var LevelSystem = class extends System {
+    constructor(width, height) {
+      super();
+      this.staticRenderingBatches = /* @__PURE__ */ new Map();
+      this.cameraWidth = 100;
+      this.cameraHeight = 90;
+      this.zoomFactor = 4;
+      const viewport = document.getElementById("viewport");
+      if (!viewport)
+        throw new Error("Viewport missing.");
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      if (!canvas)
+        throw new Error("Failed to initialize game canvas.");
+      const ctx = canvas.getContext("2d");
+      if (!ctx)
+        throw new Error("Failed to initialize canvas context.");
+      this.ctx = ctx;
+      this.canvas = canvas;
+      viewport.appendChild(canvas);
+    }
+    preload() {
+    }
+    update(_, entityManager2) {
+      this.render();
+      this.updateCamera(entityManager2);
+      const playerEntity = entityManager2.getEntityByName("player");
+      if (!playerEntity)
+        return;
+      const { position: playerPosition } = playerEntity.getComponent(PositionComponent);
+      this.updateStaticRenderingBatches(entityManager2);
+      this.renderStaticLevelElements(playerPosition);
+    }
+    updateCamera(entityManager2) {
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.imageSmoothingEnabled = false;
+      this.ctx.scale(this.zoomFactor, this.zoomFactor);
+    }
+    updateStaticRenderingBatches(entityManager2) {
+      this.staticRenderingBatches.clear();
+      const staticEntities = entityManager2.getEntitiesByComponents([SolidComponent, RenderComponent]);
+      for (const entity of staticEntities) {
+        const layerComponent = entity.getComponent(LayerComponent);
+        const layer = layerComponent ? layerComponent.layer : 0;
+        if (!this.staticRenderingBatches.has(layer)) {
+          this.staticRenderingBatches.set(layer, []);
+        }
+        this.staticRenderingBatches.get(layer)?.push(entity);
+      }
+    }
+    renderStaticLevelElements(playerPosition) {
+      const sortedBatches = Array.from(this.staticRenderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
+      for (const [_, entities] of sortedBatches) {
+        for (const entity of entities) {
+          this.renderStaticEntity(entity, playerPosition);
+        }
+      }
+    }
+    renderStaticEntity(entity, playerPosition) {
+      const { position } = entity.getComponent(PositionComponent);
+      const renderComponent = entity.getComponent(RenderComponent);
+      const solidComponent = entity.getComponent(SolidComponent);
+      if (!solidComponent)
+        return;
+      const cameraX = playerPosition.x - this.cameraWidth / 2;
+      const cameraY = playerPosition.y - this.cameraHeight / 2;
+      const adjustedX = position.x - cameraX;
+      const adjustedY = position.y - cameraY;
+      this.ctx.drawImage(
+        solidComponent.spriteData.image,
+        solidComponent.spriteData.x,
+        solidComponent.spriteData.y,
+        renderComponent.width,
+        renderComponent.height,
+        adjustedX,
+        adjustedY,
+        renderComponent.width,
+        renderComponent.height
+      );
+    }
+    render() {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+    get height() {
+      return this.canvas.height;
+    }
+    get width() {
+      return this.canvas.width;
     }
   };
 
@@ -1110,92 +1302,102 @@
   var RenderSystem = class extends System {
     constructor(width, height) {
       super();
-      this.canvas = document.createElement("canvas");
+      this.animationRenderingBatches = /* @__PURE__ */ new Map();
       this.cameraWidth = 100;
       this.cameraHeight = 90;
       this.zoomFactor = 4;
-      if (!this.canvas)
+      const viewport = document.getElementById("viewport");
+      if (!viewport)
+        throw new Error("Viewport missing.");
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      if (!canvas)
         throw new Error("Failed to initialize game canvas.");
-      const ctx = this.canvas.getContext("2d");
+      const ctx = canvas.getContext("2d");
       if (!ctx)
         throw new Error("Failed to initialize canvas context.");
       this.ctx = ctx;
-      this.canvas.width = width;
-      this.canvas.height = height;
-      document.body.appendChild(this.canvas);
+      this.canvas = canvas;
+      viewport.appendChild(canvas);
     }
     preload() {
     }
     update(_, entityManager2) {
+      this.render();
+      this.updateCamera(entityManager2);
       const playerEntity = entityManager2.getEntityByName("player");
       if (!playerEntity)
         return;
-      const playerPositionComponent = playerEntity.getComponent(PositionComponent);
-      const cameraX = playerPositionComponent.position.x - this.cameraWidth / 2;
-      const cameraY = playerPositionComponent.position.y - this.cameraHeight / 2;
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      const { position: playerPosition } = playerEntity.getComponent(PositionComponent);
+      this.updateAnimationRenderingBatches(entityManager2);
+      this.renderAnimationEntities(playerPosition);
+    }
+    updateCamera(entityManager2) {
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.scale(this.zoomFactor, this.zoomFactor);
+    }
+    updateAnimationRenderingBatches(entityManager2) {
+      this.animationRenderingBatches.clear();
       const animationEntities = entityManager2.getEntitiesByComponent(AnimationComponent);
-      const solidEntities = entityManager2.getEntitiesByComponent(SolidComponent);
-      for (const entity of solidEntities) {
-        const renderComponent = entity.getComponent(RenderComponent);
-        const positionComponent = entity.getComponent(PositionComponent);
-        const solidComponent = entity.getComponent(SolidComponent);
+      for (const entity of animationEntities) {
+        const layerComponent = entity.getComponent(LayerComponent);
+        const layer = layerComponent ? layerComponent.layer : 0;
+        if (!this.animationRenderingBatches.has(layer)) {
+          this.animationRenderingBatches.set(layer, []);
+        }
+        this.animationRenderingBatches.get(layer)?.push(entity);
+      }
+    }
+    renderAnimationEntities(playerPosition) {
+      const sortedBatches = Array.from(this.animationRenderingBatches.entries()).sort(([layerA], [layerB]) => layerA - layerB);
+      for (const [_, entities] of sortedBatches) {
+        for (const entity of entities) {
+          this.renderEntity(entity, playerPosition);
+        }
+      }
+    }
+    renderEntity(entity, playerPosition) {
+      const renderComponent = entity.getComponent(RenderComponent);
+      const positionComponent = entity.getComponent(PositionComponent);
+      const animationComponent = entity.getComponent(AnimationComponent);
+      if (animationComponent) {
+        const animation = animationComponent.animations.get(animationComponent.currentAnimation);
+        const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
+        if (!currentAnimationFrame)
+          return;
+        const cameraX = playerPosition.x - this.cameraWidth / 2;
+        const cameraY = playerPosition.y - this.cameraHeight / 2;
         const adjustedX = positionComponent.position.x - cameraX;
         const adjustedY = positionComponent.position.y - cameraY;
-        this.ctx.drawImage(
-          solidComponent.spriteData.image,
-          solidComponent.spriteData.x,
-          solidComponent.spriteData.y,
-          renderComponent.width,
-          renderComponent.height,
-          adjustedX,
-          adjustedY,
-          renderComponent.width,
-          renderComponent.height
-        );
-      }
-      for (const entity of animationEntities) {
-        const renderComponent = entity.getComponent(RenderComponent);
-        const positionComponent = entity.getComponent(PositionComponent);
-        const animationComponent = entity.getComponent(AnimationComponent);
-        if (animationComponent) {
-          const animation = animationComponent.animations.get(animationComponent.currentAnimation);
-          const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
-          if (!currentAnimationFrame)
-            return;
-          const adjustedX = positionComponent.position.x - cameraX;
-          const adjustedY = positionComponent.position.y - cameraY;
-          if (renderComponent.flipped) {
-            this.ctx.save();
-            this.ctx.scale(-1, 1);
-            this.ctx.drawImage(
-              currentAnimationFrame.image,
-              currentAnimationFrame.x,
-              currentAnimationFrame.y,
-              renderComponent.width,
-              renderComponent.height,
-              -adjustedX - renderComponent.width,
-              adjustedY,
-              renderComponent.width,
-              renderComponent.height
-            );
-            this.ctx.restore();
-          } else {
-            this.ctx.drawImage(
-              currentAnimationFrame.image,
-              currentAnimationFrame.x,
-              currentAnimationFrame.y,
-              renderComponent.width,
-              renderComponent.height,
-              adjustedX,
-              adjustedY,
-              renderComponent.width,
-              renderComponent.height
-            );
-          }
+        if (renderComponent.flipped) {
+          this.ctx.save();
+          this.ctx.scale(-1, 1);
+          this.ctx.drawImage(
+            currentAnimationFrame.image,
+            currentAnimationFrame.x,
+            currentAnimationFrame.y,
+            renderComponent.width,
+            renderComponent.height,
+            -adjustedX - renderComponent.width,
+            adjustedY,
+            renderComponent.width,
+            renderComponent.height
+          );
+          this.ctx.restore();
+        } else {
+          this.ctx.drawImage(
+            currentAnimationFrame.image,
+            currentAnimationFrame.x,
+            currentAnimationFrame.y,
+            renderComponent.width,
+            renderComponent.height,
+            adjustedX,
+            adjustedY,
+            renderComponent.width,
+            renderComponent.height
+          );
         }
       }
     }
@@ -1211,9 +1413,10 @@
   };
 
   // src/main.ts
-  SpriteSheetParser.extractSprites("floor-tile", "dungeon-floor-tiles", 8, 8, 56, 16, "./assets/tiles/MiniFantasy_DungeonFloorTiles.png");
-  SpriteSheetParser.extractSprites("wall-tiles", "dungeon-wall-tiles", 8, 8, 56, 112, "./assets/tiles/MiniFantasy_DungeonWallTiles.png");
+  SpriteSheetParser.extractSprites("dungeon-tiles", "floor-tiles", 8, 8, 56, 16, "./assets/tiles/MiniFantasy_DungeonFloorTiles.png");
+  SpriteSheetParser.extractSprites("dungeon-tiles", "wall-tiles", 8, 8, 56, 112, "./assets/tiles/MiniFantasy_DungeonWallTiles.png");
   var entityManager = new EntityManager();
+  var levelSystem = new LevelSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
   var renderSystem = new RenderSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
   var inputSystem = new InputSystem();
   var movementSystem = new MovementSystem();
@@ -1222,21 +1425,29 @@
   var combatSystem = new CombatSystem();
   createPlayerEntity(entityManager);
   createEnemyEntity(entityManager);
-  console.log(SpriteSheetParser.getSpriteSheet("wall-tiles", "dungeon-wall-tiles"));
-  for (let i = 0; i < 400; i += 8) {
-    for (let j = 0; j < 400; j += 8) {
-      const tile = EntityFactory.create().position(new Vector2D(i, j)).size(8, 8).solid(SpriteSheetParser.getSprite("floor-tile", "dungeon-floor-tiles", 0, 0)).tiled(true).build();
-      entityManager.addEntity(tile);
+  function createEntitiesFromLevelArray(levelData, spriteSheets, entityManager2) {
+    const entitiesToAdd = [];
+    for (let i = 0; i < levelData.length; i++) {
+      for (let j = 0; j < levelData[i].length; j++) {
+        const [spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
+        const spriteSheet = spriteSheets[spriteSheetIndex];
+        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)).tiled(true);
+        if (spriteSheet.includes("wall")) {
+          tileEntity.collision("box" /* BOX */, i === 0 ? -11 : 11, j === 0 ? -11 : 11);
+        }
+        entitiesToAdd.push(tileEntity.build());
+      }
     }
-    const wall = EntityFactory.create().position(new Vector2D(i, 0)).size(8, 8).solid(SpriteSheetParser.getSprite("wall-tiles", "dungeon-wall-tiles", 4, 5)).tiled(true).collision("box" /* BOX */, 0, -15).build();
-    entityManager.addEntity(wall);
+    entityManager2.addEntities(entitiesToAdd);
   }
+  createEntitiesFromLevelArray(levelOne.data, levelOne.spriteSheets, entityManager);
   var aiSystem = new AISystem(entityManager);
   var game = new Game(entityManager);
   game.addSystems([
     animationSystem,
     inputSystem,
     movementSystem,
+    levelSystem,
     renderSystem,
     collisionSystem,
     aiSystem,
