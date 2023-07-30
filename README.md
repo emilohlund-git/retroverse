@@ -12,6 +12,14 @@ Welcome to RetroVerse! This is a passion project real time rogue-like game engin
 
 RetroVerse is a passion project inspired by the golden era of gaming. It aims to provide a delightful gaming experience to both veteran gamers and newcomers. Immerse yourself in the retro aesthetics, challenging levels, and engaging storylines that will keep you hooked for hours.
 
+## 🕹️ How to build & play
+
+To play the game just simply clone the repository and open the `public/index.html` file in the browser.
+
+If you add changes to the source-code simply run `npm run build` and it will watch for changes and compile the TypeScript code to the `main.js` file in the `/public` folder.
+
+Don't forget to install the project dependencies first `npm i`.
+
 ## 🤝 Contributions Welcome
 
 Contributions are welcome and encouraged! If you would like to contribute to RetroVerse, whether it's fixing a bug, implementing a new feature, or suggesting enhancements, i'd love to hear from you.
