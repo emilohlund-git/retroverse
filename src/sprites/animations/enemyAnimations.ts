@@ -1,4 +1,4 @@
-import { SpriteSheetParser } from "../SpriteSheetParser";
+import { SpriteSheetParser } from "../../utils/SpriteSheetParser";
 import { createAnimation } from "./createAnimation";
 
 export const enemyIdleAnimation = createAnimation(

@@ -430,7 +430,7 @@
     entityManager.addEntity(playerEntity);
   }
 
-  // src/sprites/SpriteSheetParser.ts
+  // src/utils/SpriteSheetParser.ts
   var SpriteSheetParser = class {
     static {
       this.spriteSheets = {};

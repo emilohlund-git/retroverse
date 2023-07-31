@@ -6,7 +6,7 @@ async function watch() {
   let ctx = await esbuild.context({
     entryPoints: ["src/main.ts"],
     bundle: true,
-    outdir: "public",
+    outdir: "docs",
     loader: {
       ".png": "file",
       ".wav": "file",

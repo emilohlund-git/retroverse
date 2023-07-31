@@ -1,4 +1,4 @@
-import { SpriteData, SpriteSheet, SpriteSheetParser } from "../SpriteSheetParser";
+import { SpriteData, SpriteSheet, SpriteSheetParser } from "../../utils/SpriteSheetParser";
 import { Animation } from "./Animation";
 
 export function createEntityAnimations(entityId: string): Map<string, Animation> {

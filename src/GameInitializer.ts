@@ -5,7 +5,6 @@ import { EntityManager } from "./entities/EntityManager";
 import { createEnemyEntity } from "./entities/enemyEntity";
 import { createPlayerEntity } from "./entities/playerEntity";
 import { LevelInitializer } from "./levels/LevelInitializer";
-import { SpriteSheetParser } from "./sprites/SpriteSheetParser";
 import { createEntityAnimations } from "./sprites/animations/AnimationFactory";
 import { loadItems } from "./sprites/itemFactory";
 import { AISystem } from "./systems/AISystem";
@@ -18,6 +17,7 @@ import { InventorySystem } from "./systems/InventorySystem";
 import { MovementSystem } from "./systems/MovementSystem";
 import { RenderSystem } from "./systems/RenderSystem";
 import { EntityFactory } from "./utils/EntityFactory";
+import { SpriteSheetParser } from "./utils/SpriteSheetParser";
 import { Vector2D } from "./utils/Vector2D";
 import { LEVEL_HEIGHT, LEVEL_WIDTH, TILE_HEIGHT, TILE_WIDTH } from "./utils/constants";
 

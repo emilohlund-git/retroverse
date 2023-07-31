@@ -1,5 +1,5 @@
 import { ItemComponent } from "../components/ItemComponent";
-import { SpriteSheetParser } from "./SpriteSheetParser";
+import { SpriteSheetParser } from "../utils/SpriteSheetParser";
 
 interface ItemData {
   name: string;

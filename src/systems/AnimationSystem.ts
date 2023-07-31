@@ -3,7 +3,7 @@ import { CombatComponent } from "../components/CombatCompontent";
 import { RenderComponent } from "../components/RenderComponent";
 import { EntityManager } from "../entities/EntityManager";
 import { Animation } from "../sprites/animations/Animation";
-import { SpriteData } from "../sprites/SpriteSheetParser";
+import { SpriteData } from "../utils/SpriteSheetParser";
 import { System } from "./System";
 
 export class AnimationSystem extends System {

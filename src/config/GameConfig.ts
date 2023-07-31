@@ -1,5 +1,5 @@
 import { LevelData } from "../levels/level";
-import { SpriteSheetInformation } from "../sprites/SpriteSheetParser";
+import { SpriteSheetInformation } from "../utils/SpriteSheetParser";
 
 export interface GameConfig {
   spriteSheetPaths: SpriteSheetInformation[];

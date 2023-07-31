@@ -1,4 +1,4 @@
-import { SpriteSheet } from "../SpriteSheetParser";
+import { SpriteSheet } from "../../utils/SpriteSheetParser";
 import { Animation } from "./Animation";
 
 export function createAnimation(

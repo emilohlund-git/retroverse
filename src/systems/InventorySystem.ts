@@ -2,7 +2,7 @@ import { InventoryComponent } from "../components/InventoryComponent";
 import { ItemComponent } from "../components/ItemComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { EntityManager } from "../entities/EntityManager";
-import { SpriteData } from "../sprites/SpriteSheetParser";
+import { SpriteData } from "../utils/SpriteSheetParser";
 import { Vector2D } from "../utils/Vector2D";
 import { System } from "./System";
 

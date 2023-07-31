@@ -16,7 +16,7 @@ import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { Animation } from "../sprites/animations/Animation";
-import { SpriteData } from "../sprites/SpriteSheetParser";
+import { SpriteData } from "./SpriteSheetParser";
 import { Vector2D } from "./Vector2D";
 
 export class EntityFactory {
