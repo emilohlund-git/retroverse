@@ -31,7 +31,16 @@ export interface SpriteSheetInformation {
 export class SpriteSheetParser {
   private static spriteSheets: EntitiesSpriteSheets = {};
 
-  public static extractSprites(
+  private static loadImage(url: string, imageWidth: number, imageHeight: number): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image(imageWidth, imageHeight);
+      image.onerror = reject;
+      image.src = url;
+      image.onload = () => resolve(image);
+    });
+  }
+
+  public static async extractSprites(
     entityId: string,
     spriteSheetName: string,
     spriteWidth: number,
@@ -40,33 +49,35 @@ export class SpriteSheetParser {
     imageHeight: number,
     spriteSheetUrl: string
   ) {
-    const spriteSheetImage = new Image(imageWidth, imageHeight);
+    try {
+      const spriteSheetImage = await this.loadImage(spriteSheetUrl, imageWidth, imageHeight);
 
-    spriteSheetImage.src = spriteSheetUrl;
+      const numRows = Math.floor(spriteSheetImage.height / spriteHeight);
+      const numCols = Math.floor(spriteSheetImage.width / spriteWidth);
 
-    const numRows = Math.floor(spriteSheetImage.height / spriteHeight);
-    const numCols = Math.floor(spriteSheetImage.width / spriteWidth);
+      const sprites: SpriteSheet = {};
 
-    const sprites: SpriteSheet = {};
-
-    for (let row = 0; row < numRows; row++) {
-      sprites[row] = {};
-      for (let col = 0; col < numCols; col++) {
-        sprites[row][col] = {
-          image: spriteSheetImage,
-          x: col * spriteWidth,
-          y: row * spriteHeight,
-          width: spriteWidth,
-          height: spriteHeight,
-        };
+      for (let row = 0; row < numRows; row++) {
+        sprites[row] = {};
+        for (let col = 0; col < numCols; col++) {
+          sprites[row][col] = {
+            image: spriteSheetImage,
+            x: col * spriteWidth,
+            y: row * spriteHeight,
+            width: spriteWidth,
+            height: spriteHeight,
+          };
+        }
       }
-    }
 
-    if (!this.spriteSheets[entityId]) {
-      this.spriteSheets[entityId] = {};
-    }
+      if (!this.spriteSheets[entityId]) {
+        this.spriteSheets[entityId] = {};
+      }
 
-    this.spriteSheets[entityId][spriteSheetName] = sprites;
+      this.spriteSheets[entityId][spriteSheetName] = sprites;
+    } catch (error) {
+      console.error(`Error loading sprite sheet: ${spriteSheetUrl}`);
+    }
   }
 
   public static getSprite(entityId: string, spriteSheetName: string, row: number, col: number): SpriteData | undefined {

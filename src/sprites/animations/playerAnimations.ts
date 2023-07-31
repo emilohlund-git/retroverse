@@ -1,4 +1,4 @@
-import { SpriteSheetParser } from "../utils/SpriteSheetParser";
+/* import { SpriteSheetParser } from "../../utils/SpriteSheetParser";
 import { Animation } from "./Animation";
 
 SpriteSheetParser.extractSprites("player", "player-idle", 32, 32, 512, 128, "./assets/spritesheets/player/MiniFantasy_CreaturesHumanBaseIdle.png");
@@ -85,4 +85,4 @@ export const playerDeathAnimation = new Animation("death", [
   playerDieSpriteSheet![0][11],
   playerDieSpriteSheet![0][12],
   playerDieSpriteSheet![0][13],
-], 0.010, false);
+], 0.010, false); */

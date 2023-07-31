@@ -1,4 +1,4 @@
-import { Animation } from "../sprites/Animation";
+import { Animation } from "../sprites/animations/Animation";
 import { Component } from "./Component";
 
 export enum AnimationState {

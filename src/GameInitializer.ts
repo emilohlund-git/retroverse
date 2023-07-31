@@ -1,9 +1,13 @@
 import { Game } from "./Game";
+import { ItemComponent } from "./components/ItemComponent";
 import { GameConfig } from "./config/GameConfig";
 import { EntityManager } from "./entities/EntityManager";
 import { createEnemyEntity } from "./entities/enemyEntity";
 import { createPlayerEntity } from "./entities/playerEntity";
 import { LevelInitializer } from "./levels/LevelInitializer";
+import { SpriteSheetParser } from "./sprites/SpriteSheetParser";
+import { createEntityAnimations } from "./sprites/animations/AnimationFactory";
+import { loadItems } from "./sprites/itemFactory";
 import { AISystem } from "./systems/AISystem";
 import { AnimationSystem } from "./systems/AnimationSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
@@ -14,7 +18,6 @@ import { InventorySystem } from "./systems/InventorySystem";
 import { MovementSystem } from "./systems/MovementSystem";
 import { RenderSystem } from "./systems/RenderSystem";
 import { EntityFactory } from "./utils/EntityFactory";
-import { SpriteSheetParser } from "./utils/SpriteSheetParser";
 import { Vector2D } from "./utils/Vector2D";
 import { LEVEL_HEIGHT, LEVEL_WIDTH, TILE_HEIGHT, TILE_WIDTH } from "./utils/constants";
 
@@ -30,18 +33,19 @@ export class GameInitializer {
   }
 
   async initialize(): Promise<void> {
-    this.loadSprites();
+    await this.loadSprites();
     this.createPlayer();
-    this.createEnemies();
+    await this.createEnemies();
     this.createWorldInventory();
     await this.createLevels();
+    await this.createProps();
     this.addSystems();
     this.game.run();
   }
 
-  private loadSprites(): void {
+  private async loadSprites(): Promise<void> {
     for (const path of this.config.spriteSheetPaths) {
-      SpriteSheetParser.extractSprites(
+      await SpriteSheetParser.extractSprites(
         path.entityId,
         path.spriteSheetName,
         path.spriteWidth,
@@ -54,12 +58,17 @@ export class GameInitializer {
   }
 
   private createPlayer(): void {
-    createPlayerEntity(this.entityManager);
+    const playerAnimations = createEntityAnimations("player");
+    createPlayerEntity(this.entityManager, playerAnimations);
   }
 
-  private createEnemies(): void {
+  private async createEnemies(): Promise<void> {
+    const enemyAnimations = createEntityAnimations("enemy");
+    const items = await loadItems();
+    const enemyLoot = <ItemComponent[]>[];
+    enemyLoot.push(items.get("Key")!);
     for (let i = 1; i < 2; i++) {
-      createEnemyEntity(this.entityManager, `enemy${i}`, 110, 10);
+      createEnemyEntity(this.entityManager, `enemy${i}`, 110, 10, enemyAnimations, enemyLoot);
     }
   }
 
@@ -77,6 +86,29 @@ export class GameInitializer {
     for (const levelData of this.config.levels) {
       await this.levelInitializer.createEntitiesFromLevelArray(levelData.data, levelData.spriteSheets);
     }
+  }
+
+  private async createProps(): Promise<void> {
+    const torchAnimations = createEntityAnimations("torch");
+    const torch = EntityFactory.create()
+      .name("torch")
+      .size(16, 16)
+      .position(new Vector2D(105, 0))
+      .animations(torchAnimations, "fire", true)
+      .prop()
+      .layer(1)
+      .build();
+
+    const torch2 = EntityFactory.create()
+      .name("torch")
+      .size(16, 16)
+      .position(new Vector2D(129, 0))
+      .animations(torchAnimations, "fire", true)
+      .prop()
+      .layer(1)
+      .build();
+
+    this.entityManager.addEntities([torch, torch2]);
   }
 
   private addSystems(): void {

@@ -1,6 +1,6 @@
 import { EntityFactory } from "../utils/EntityFactory";
 import { Vector2D } from "../utils/Vector2D";
-import { torchFireAnimation } from "./torchAnimation";
+import { torchFireAnimation } from "./animations/torchAnimation";
 
 const torchAnimations = new Map();
 torchAnimations.set("fire", torchFireAnimation);

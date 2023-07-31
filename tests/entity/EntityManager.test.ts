@@ -5,7 +5,7 @@ import { PropComponent } from "../../src/components/PropComponent";
 import { RenderComponent } from "../../src/components/RenderComponent";
 import { Entity } from "../../src/entities/Entity";
 import { EntityManager } from "../../src/entities/EntityManager";
-import { SpriteData } from "../../src/utils/SpriteSheetParser";
+import { SpriteData } from "../../src/sprites/SpriteSheetParser";
 import { Vector2D } from "../../src/utils/Vector2D";
 
 describe('EntityManager', () => {

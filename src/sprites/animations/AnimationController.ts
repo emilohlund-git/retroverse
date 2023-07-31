@@ -1,6 +1,6 @@
-import { AnimationComponent, AnimationState } from "../components/AnimationComponent";
-import { CombatComponent } from "../components/CombatCompontent";
-import { MovementComponent } from "../components/MovementComponent";
+import { AnimationComponent, AnimationState } from "../../components/AnimationComponent";
+import { CombatComponent } from "../../components/CombatCompontent";
+import { MovementComponent } from "../../components/MovementComponent";
 
 interface AnimationCondition {
   name: string;

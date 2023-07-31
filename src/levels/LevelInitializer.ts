@@ -4,8 +4,8 @@ import { InventoryComponent } from "../components/InventoryComponent";
 import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
+import { SpriteSheetParser } from "../sprites/SpriteSheetParser";
 import { EntityFactory } from "../utils/EntityFactory";
-import { SpriteSheetParser } from "../utils/SpriteSheetParser";
 import { Vector2D } from "../utils/Vector2D";
 
 export class LevelInitializer {

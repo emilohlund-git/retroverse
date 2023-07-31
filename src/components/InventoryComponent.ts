@@ -10,6 +10,10 @@ export class InventoryComponent extends Component {
     super();
   }
 
+  addItems(items: ItemComponent[]) {
+    this.items.push(...items);
+  }
+
   addItem(item: ItemComponent) {
     this.items.push(item);
   }

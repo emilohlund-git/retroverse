@@ -5,7 +5,7 @@ import { MovementComponent } from "../components/MovementComponent";
 import { PositionComponent } from "../components/PositionComponent";
 import { RenderComponent } from "../components/RenderComponent";
 import { EntityManager } from "../entities/EntityManager";
-import { AnimationController } from "../sprites/AnimationController";
+import { AnimationController } from "../sprites/animations/AnimationController";
 import { System } from "./System";
 
 export class MovementSystem extends System {

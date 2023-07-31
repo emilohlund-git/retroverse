@@ -1,4 +1,4 @@
-import { SpriteData, SpriteSheet } from "../utils/SpriteSheetParser";
+import { SpriteData, SpriteSheet } from "../sprites/SpriteSheetParser";
 import { Component } from "./Component";
 
 export class RenderComponent extends Component {

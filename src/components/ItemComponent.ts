@@ -1,4 +1,4 @@
-import { SpriteData } from "../utils/SpriteSheetParser";
+import { SpriteData } from "../sprites/SpriteSheetParser";
 import { Vector2D } from "../utils/Vector2D";
 import { Component } from "./Component";
 

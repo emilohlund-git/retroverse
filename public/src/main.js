@@ -91,6 +91,186 @@
     }
   };
 
+  // src/utils/SpriteSheetParser.ts
+  var SpriteSheetParser = class {
+    static {
+      this.spriteSheets = {};
+    }
+    static extractSprites(entityId, spriteSheetName, spriteWidth, spriteHeight, imageWidth, imageHeight, spriteSheetUrl) {
+      const spriteSheetImage = new Image(imageWidth, imageHeight);
+      spriteSheetImage.src = spriteSheetUrl;
+      const numRows = Math.floor(spriteSheetImage.height / spriteHeight);
+      const numCols = Math.floor(spriteSheetImage.width / spriteWidth);
+      const sprites = {};
+      for (let row = 0; row < numRows; row++) {
+        sprites[row] = {};
+        for (let col = 0; col < numCols; col++) {
+          sprites[row][col] = {
+            image: spriteSheetImage,
+            x: col * spriteWidth,
+            y: row * spriteHeight,
+            width: spriteWidth,
+            height: spriteHeight
+          };
+        }
+      }
+      if (!this.spriteSheets[entityId]) {
+        this.spriteSheets[entityId] = {};
+      }
+      this.spriteSheets[entityId][spriteSheetName] = sprites;
+    }
+    static getSprite(entityId, spriteSheetName, row, col) {
+      const entitySpriteSheets = this.spriteSheets[entityId];
+      if (!entitySpriteSheets)
+        return void 0;
+      const sprites = entitySpriteSheets[spriteSheetName];
+      if (!sprites)
+        return void 0;
+      return sprites[row]?.[col];
+    }
+    static getSpriteSheet(entityId, spriteSheetName) {
+      const entitySpriteSheet = this.spriteSheets[entityId];
+      if (!entitySpriteSheet)
+        return void 0;
+      const spriteSheet = entitySpriteSheet[spriteSheetName];
+      if (!spriteSheet)
+        return void 0;
+      return spriteSheet;
+    }
+  };
+
+  // src/sprites/animations/Animation.ts
+  var Animation = class {
+    constructor(name, frames, animationSpeed, loop, priority = 0) {
+      this.name = name;
+      this.frames = frames;
+      this.animationSpeed = animationSpeed;
+      this.loop = loop;
+      this.priority = priority;
+    }
+  };
+
+  // src/sprites/animations/enemyAnimations.ts
+  SpriteSheetParser.extractSprites("enemy", "enemy-idle", 32, 32, 512, 128, "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseIdle.png");
+  SpriteSheetParser.extractSprites("enemy", "enemy-run", 32, 32, 128, 128, "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseWalk.png");
+  SpriteSheetParser.extractSprites("enemy", "enemy-attack", 32, 32, 128, 128, "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseAttack.png");
+  SpriteSheetParser.extractSprites("enemy", "enemy-hurt", 32, 32, 128, 128, "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseDmg.png");
+  SpriteSheetParser.extractSprites("enemy", "enemy-die", 32, 32, 384, 32, "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseDie.png");
+  var enemyIdleSpriteSheet = SpriteSheetParser.getSpriteSheet("enemy", "enemy-idle");
+  var enemyRunSpriteSheet = SpriteSheetParser.getSpriteSheet("enemy", "enemy-run");
+  var enemyAttackSpriteSheet = SpriteSheetParser.getSpriteSheet("enemy", "enemy-attack");
+  var enemyHurtSpriteSheet = SpriteSheetParser.getSpriteSheet("enemy", "enemy-hurt");
+  var enemyDieSpriteSheet = SpriteSheetParser.getSpriteSheet("enemy", "enemy-die");
+  var enemyIdleAnimation = new Animation("idle", [
+    enemyIdleSpriteSheet[1][0],
+    enemyIdleSpriteSheet[1][1],
+    enemyIdleSpriteSheet[1][2],
+    enemyIdleSpriteSheet[1][3],
+    enemyIdleSpriteSheet[1][4],
+    enemyIdleSpriteSheet[1][5],
+    enemyIdleSpriteSheet[1][6],
+    enemyIdleSpriteSheet[1][7]
+  ], 5e-3, true);
+  var enemyIdleUpAnimation = new Animation("idle-up", [
+    enemyIdleSpriteSheet[3][0],
+    enemyIdleSpriteSheet[3][1],
+    enemyIdleSpriteSheet[3][2],
+    enemyIdleSpriteSheet[3][3],
+    enemyIdleSpriteSheet[3][4],
+    enemyIdleSpriteSheet[3][5],
+    enemyIdleSpriteSheet[3][6],
+    enemyIdleSpriteSheet[3][7]
+  ], 5e-3, true);
+  var enemyRunAnimation = new Animation("run", [
+    enemyRunSpriteSheet[1][0],
+    enemyRunSpriteSheet[1][1],
+    enemyRunSpriteSheet[1][2],
+    enemyRunSpriteSheet[1][3]
+  ], 5e-3, true);
+  var enemyRunUpAnimation = new Animation("run-up", [
+    enemyRunSpriteSheet[3][0],
+    enemyRunSpriteSheet[3][1],
+    enemyRunSpriteSheet[3][2],
+    enemyRunSpriteSheet[3][3]
+  ], 5e-3, true);
+  var enemyAttackAnimation = new Animation("attack", [
+    enemyAttackSpriteSheet[1][0],
+    enemyAttackSpriteSheet[1][1],
+    enemyAttackSpriteSheet[1][2],
+    enemyAttackSpriteSheet[1][3]
+  ], 0.01, false);
+  var enemyAttackUpAnimation = new Animation("attack-up", [
+    enemyAttackSpriteSheet[3][0],
+    enemyAttackSpriteSheet[3][1],
+    enemyAttackSpriteSheet[3][2],
+    enemyAttackSpriteSheet[3][3]
+  ], 0.01, false);
+  var enemyHurtAnimation = new Animation("hurt", [
+    enemyHurtSpriteSheet[1][0],
+    enemyHurtSpriteSheet[1][1],
+    enemyHurtSpriteSheet[1][2],
+    enemyHurtSpriteSheet[1][3]
+  ], 0.01, false);
+  var enemyDeathAnimation = new Animation("death", [
+    enemyDieSpriteSheet[0][0],
+    enemyDieSpriteSheet[0][1],
+    enemyDieSpriteSheet[0][2],
+    enemyDieSpriteSheet[0][3],
+    enemyDieSpriteSheet[0][4],
+    enemyDieSpriteSheet[0][5],
+    enemyDieSpriteSheet[0][6],
+    enemyDieSpriteSheet[0][7],
+    enemyDieSpriteSheet[0][8],
+    enemyDieSpriteSheet[0][9],
+    enemyDieSpriteSheet[0][10],
+    enemyDieSpriteSheet[0][11]
+  ], 0.01, false);
+
+  // src/utils/Vector2D.ts
+  var Vector2D = class {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+    get length() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    normalize() {
+      const length = this.length;
+      if (length !== 0) {
+        this.x /= length;
+        this.y /= length;
+      }
+    }
+  };
+
+  // src/components/ItemComponent.ts
+  var ItemComponent = class extends Component {
+    constructor(name, description, icon, dropPosition = new Vector2D(0, 0), isDropped = false) {
+      super();
+      this.name = name;
+      this.description = description;
+      this.icon = icon;
+      this.dropPosition = dropPosition;
+      this.isDropped = isDropped;
+    }
+  };
+
+  // src/sprites/items.ts
+  SpriteSheetParser.extractSprites("items", "all-items", 16, 16, 160, 160, "./assets/spritesheets/items/items.png");
+  var cheeseSprite = SpriteSheetParser.getSprite("items", "all-items", 4, 0);
+  var keySprite = SpriteSheetParser.getSprite("items", "all-items", 5, 0);
+  var bluePotionSprite = SpriteSheetParser.getSprite("items", "all-items", 0, 0);
+  var blueRingSprite = SpriteSheetParser.getSprite("items", "all-items", 4, 1);
+  var greenRingSprite = SpriteSheetParser.getSprite("items", "all-items", 5, 1);
+  var redPotionSprite = SpriteSheetParser.getSprite("items", "all-items", 1, 0);
+  var cheese = new ItemComponent("Cheese", "A cheese.", cheeseSprite);
+  var key = new ItemComponent("Key", "A key", keySprite);
+  var greenRing = new ItemComponent("Green Ring", "A green ring.", greenRingSprite);
+  var blueRing = new ItemComponent("Blue Ring", "A blue ring.", blueRingSprite);
+  var bluePotion = new ItemComponent("Blue Potion", "A blue potion.", bluePotionSprite);
+  var redPotion = new ItemComponent("Red Potion", "A red potion.", redPotionSprite);
+
   // src/components/AIComponent.ts
   var AIComponent = class extends Component {
     constructor(aggroRange, hasLineOfSight = false, isChasing = false) {
@@ -103,9 +283,9 @@
 
   // src/components/AnimationComponent.ts
   var AnimationComponent = class extends Component {
-    constructor(animations = /* @__PURE__ */ new Map(), currentAnimation = "", currentFrameIndex = 0, currentAnimationTime = 0, isPlaying = false, frameWidth = 32, frameHeight = 32, state) {
+    constructor(animations3 = /* @__PURE__ */ new Map(), currentAnimation = "", currentFrameIndex = 0, currentAnimationTime = 0, isPlaying = false, frameWidth = 32, frameHeight = 32, state) {
       super();
-      this.animations = animations;
+      this.animations = animations3;
       this.currentAnimation = currentAnimation;
       this.currentFrameIndex = currentFrameIndex;
       this.currentAnimationTime = currentAnimationTime;
@@ -182,9 +362,9 @@
       const componentKeys = Object.entries(component);
       const debugSpan = document.createElement("span");
       const toAdd = [];
-      for (const key of componentKeys) {
-        if (key)
-          toAdd.push(key);
+      for (const key2 of componentKeys) {
+        if (key2)
+          toAdd.push(key2);
       }
       debugSpan.innerHTML += JSON.stringify(toAdd, null, 3);
       this.debugDiv.appendChild(debugSpan);
@@ -209,9 +389,6 @@
       this.items = items;
       this.maxCapacity = maxCapacity;
       this.pickingUp = pickingUp;
-    }
-    addItems(items) {
-      this.items.push(...items);
     }
     addItem(item) {
       this.items.push(item);
@@ -339,8 +516,8 @@
       this.entity.addComponent("CombatComponent", new CombatComponent());
       return this;
     }
-    inventory(maxCapacity, items = []) {
-      const inventoryComponent = new InventoryComponent(items, maxCapacity);
+    inventory(maxCapacity) {
+      const inventoryComponent = new InventoryComponent([], maxCapacity);
       this.entity.addComponent("InventoryComponent", inventoryComponent);
       return this;
     }
@@ -369,8 +546,8 @@
       this.entity.addComponent("PlayerComponent", new PlayerComponent());
       return this;
     }
-    animations(animations, currentAnimation, isPlaying) {
-      this.entity.addComponent("AnimationComponent", new AnimationComponent(animations, currentAnimation, 0, 10, isPlaying, 0, 0, 1 /* Finished */));
+    animations(animations3, currentAnimation, isPlaying) {
+      this.entity.addComponent("AnimationComponent", new AnimationComponent(animations3, currentAnimation, 0, 10, isPlaying, 0, 0, 1 /* Finished */));
       return this;
     }
     ai(aggroRange) {
@@ -393,29 +570,107 @@
     }
   };
 
-  // src/utils/Vector2D.ts
-  var Vector2D = class {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-    }
-    get length() {
-      return Math.sqrt(this.x * this.x + this.y * this.y);
-    }
-    normalize() {
-      const length = this.length;
-      if (length !== 0) {
-        this.x /= length;
-        this.y /= length;
-      }
-    }
-  };
-
   // src/entities/enemyEntity.ts
-  function createEnemyEntity(entityManager, name, positionX, positionY, animations, items) {
-    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 0, 0, 16, 16).combat().ai(50).animations(animations).inventory(10, items).layer(3).build();
+  var animations = /* @__PURE__ */ new Map();
+  animations.set(enemyIdleAnimation.name, enemyIdleAnimation);
+  animations.set(enemyRunAnimation.name, enemyRunAnimation);
+  animations.set(enemyRunUpAnimation.name, enemyRunUpAnimation);
+  animations.set(enemyIdleUpAnimation.name, enemyIdleUpAnimation);
+  animations.set(enemyAttackAnimation.name, enemyAttackAnimation);
+  animations.set(enemyAttackUpAnimation.name, enemyAttackUpAnimation);
+  animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
+  animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
+  function createEnemyEntity(entityManager, name, positionX, positionY) {
+    const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 0, 0, 16, 16).combat().ai(50).animations(animations).inventory().layer(3).build();
+    const inventory = enemyEntity.getComponent("InventoryComponent");
+    for (let i = 0; i < 1; i++) {
+      inventory?.addItem({ ...cheese });
+      inventory?.addItem({ ...key });
+      inventory?.addItem({ ...blueRing });
+      inventory?.addItem({ ...bluePotion });
+      inventory?.addItem({ ...redPotion });
+      inventory?.addItem({ ...greenRing });
+    }
     entityManager.addEntity(enemyEntity);
   }
+
+  // src/sprites/animations/playerAnimations.ts
+  SpriteSheetParser.extractSprites("player", "player-idle", 32, 32, 512, 128, "./assets/spritesheets/player/MiniFantasy_CreaturesHumanBaseIdle.png");
+  SpriteSheetParser.extractSprites("player", "player-run", 32, 32, 128, 128, "./assets/spritesheets/player/MiniFantasy_CreaturesHumanBaseWalk.png");
+  SpriteSheetParser.extractSprites("player", "player-attack", 32, 32, 128, 128, "./assets/spritesheets/player/MiniFantasy_CreaturesHumanBaseAttack.png");
+  SpriteSheetParser.extractSprites("player", "player-hurt", 32, 32, 128, 128, "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseDmg.png");
+  SpriteSheetParser.extractSprites("player", "player-die", 32, 32, 384, 32, "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseSoulDie.png");
+  var playerIdleSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-idle");
+  var playerRunSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-run");
+  var playerAttackSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-attack");
+  var playerHurtSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-hurt");
+  var playerDieSpriteSheet = SpriteSheetParser.getSpriteSheet("player", "player-die");
+  var playerIdleAnimation = new Animation("idle", [
+    playerIdleSpriteSheet[1][0],
+    playerIdleSpriteSheet[1][1],
+    playerIdleSpriteSheet[1][2],
+    playerIdleSpriteSheet[1][3],
+    playerIdleSpriteSheet[1][4],
+    playerIdleSpriteSheet[1][5],
+    playerIdleSpriteSheet[1][6],
+    playerIdleSpriteSheet[1][7]
+  ], 5e-3, true);
+  var playerIdleUpAnimation = new Animation("idle-up", [
+    playerIdleSpriteSheet[3][0],
+    playerIdleSpriteSheet[3][1],
+    playerIdleSpriteSheet[3][2],
+    playerIdleSpriteSheet[3][3],
+    playerIdleSpriteSheet[3][4],
+    playerIdleSpriteSheet[3][5],
+    playerIdleSpriteSheet[3][6],
+    playerIdleSpriteSheet[3][7]
+  ], 5e-3, true);
+  var playerRunAnimation = new Animation("run", [
+    playerRunSpriteSheet[1][0],
+    playerRunSpriteSheet[1][1],
+    playerRunSpriteSheet[1][2],
+    playerRunSpriteSheet[1][3]
+  ], 5e-3, true);
+  var playerRunUpAnimation = new Animation("run-up", [
+    playerRunSpriteSheet[3][0],
+    playerRunSpriteSheet[3][1],
+    playerRunSpriteSheet[3][2],
+    playerRunSpriteSheet[3][3]
+  ], 5e-3, true);
+  var playerAttackAnimation = new Animation("attack", [
+    playerAttackSpriteSheet[1][0],
+    playerAttackSpriteSheet[1][1],
+    playerAttackSpriteSheet[1][2],
+    playerAttackSpriteSheet[1][3]
+  ], 0.01, false);
+  var playerAttackUpAnimation = new Animation("attack-up", [
+    playerAttackSpriteSheet[3][0],
+    playerAttackSpriteSheet[3][1],
+    playerAttackSpriteSheet[3][2],
+    playerAttackSpriteSheet[3][3]
+  ], 0.01, false);
+  var playerHurtAnimation = new Animation("hurt", [
+    playerHurtSpriteSheet[1][0],
+    playerHurtSpriteSheet[1][1],
+    playerHurtSpriteSheet[1][2],
+    playerHurtSpriteSheet[1][3]
+  ], 0.01, false);
+  var playerDeathAnimation = new Animation("death", [
+    playerDieSpriteSheet[0][0],
+    playerDieSpriteSheet[0][1],
+    playerDieSpriteSheet[0][2],
+    playerDieSpriteSheet[0][3],
+    playerDieSpriteSheet[0][4],
+    playerDieSpriteSheet[0][5],
+    playerDieSpriteSheet[0][6],
+    playerDieSpriteSheet[0][7],
+    playerDieSpriteSheet[0][8],
+    playerDieSpriteSheet[0][9],
+    playerDieSpriteSheet[0][10],
+    playerDieSpriteSheet[0][11],
+    playerDieSpriteSheet[0][12],
+    playerDieSpriteSheet[0][13]
+  ], 0.01, false);
 
   // src/utils/constants.ts
   var TILE_WIDTH = 32;
@@ -424,70 +679,20 @@
   var LEVEL_HEIGHT = 15;
 
   // src/entities/playerEntity.ts
+  var animations2 = /* @__PURE__ */ new Map();
+  animations2.set(playerIdleAnimation.name, playerIdleAnimation);
+  animations2.set(playerRunAnimation.name, playerRunAnimation);
+  animations2.set(playerRunUpAnimation.name, playerRunUpAnimation);
+  animations2.set(playerIdleUpAnimation.name, playerIdleUpAnimation);
+  animations2.set(playerAttackAnimation.name, playerAttackAnimation);
+  animations2.set(playerAttackUpAnimation.name, playerAttackUpAnimation);
+  animations2.set(playerHurtAnimation.name, playerHurtAnimation);
+  animations2.set(playerDeathAnimation.name, playerDeathAnimation);
   var excludedComponents = ["DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
-  function createPlayerEntity(entityManager, animations) {
-    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 2, 0, 16, 16).player().combat().animations(animations).layer(2).inventory().debug(entityManager, excludedComponents).build();
+  function createPlayerEntity(entityManager) {
+    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 2, 0, 16, 16).player().combat().animations(animations2).layer(2).inventory().debug(entityManager, excludedComponents).build();
     entityManager.addEntity(playerEntity);
   }
-
-  // src/sprites/SpriteSheetParser.ts
-  var SpriteSheetParser = class {
-    static {
-      this.spriteSheets = {};
-    }
-    static loadImage(url, imageWidth, imageHeight) {
-      return new Promise((resolve, reject) => {
-        const image = new Image(imageWidth, imageHeight);
-        image.onerror = reject;
-        image.src = url;
-        image.onload = () => resolve(image);
-      });
-    }
-    static async extractSprites(entityId, spriteSheetName, spriteWidth, spriteHeight, imageWidth, imageHeight, spriteSheetUrl) {
-      try {
-        const spriteSheetImage = await this.loadImage(spriteSheetUrl, imageWidth, imageHeight);
-        const numRows = Math.floor(spriteSheetImage.height / spriteHeight);
-        const numCols = Math.floor(spriteSheetImage.width / spriteWidth);
-        const sprites = {};
-        for (let row = 0; row < numRows; row++) {
-          sprites[row] = {};
-          for (let col = 0; col < numCols; col++) {
-            sprites[row][col] = {
-              image: spriteSheetImage,
-              x: col * spriteWidth,
-              y: row * spriteHeight,
-              width: spriteWidth,
-              height: spriteHeight
-            };
-          }
-        }
-        if (!this.spriteSheets[entityId]) {
-          this.spriteSheets[entityId] = {};
-        }
-        this.spriteSheets[entityId][spriteSheetName] = sprites;
-      } catch (error) {
-        console.error(`Error loading sprite sheet: ${spriteSheetUrl}`);
-      }
-    }
-    static getSprite(entityId, spriteSheetName, row, col) {
-      const entitySpriteSheets = this.spriteSheets[entityId];
-      if (!entitySpriteSheets)
-        return void 0;
-      const sprites = entitySpriteSheets[spriteSheetName];
-      if (!sprites)
-        return void 0;
-      return sprites[row]?.[col];
-    }
-    static getSpriteSheet(entityId, spriteSheetName) {
-      const entitySpriteSheet = this.spriteSheets[entityId];
-      if (!entitySpriteSheet)
-        return void 0;
-      const spriteSheet = entitySpriteSheet[spriteSheetName];
-      if (!spriteSheet)
-        return void 0;
-      return spriteSheet;
-    }
-  };
 
   // src/levels/LevelInitializer.ts
   var LevelInitializer = class {
@@ -539,98 +744,6 @@
       entityFactory.interactable(conditions, interactionAction, interactionItemName);
     }
   };
-
-  // src/sprites/animations/Animation.ts
-  var Animation = class {
-    constructor(name, frames, animationSpeed, loop, priority = 0) {
-      this.name = name;
-      this.frames = frames;
-      this.animationSpeed = animationSpeed;
-      this.loop = loop;
-      this.priority = priority;
-    }
-  };
-
-  // src/sprites/animations/AnimationFactory.ts
-  function createEntityAnimations(entityId) {
-    const animations = /* @__PURE__ */ new Map();
-    switch (entityId) {
-      case "player":
-        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
-        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
-        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
-        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
-        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
-        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
-        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
-        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
-        break;
-      case "enemy":
-        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
-        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
-        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
-        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
-        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
-        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
-        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
-        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
-        break;
-      case "torch":
-        animations.set("fire", createAnimationFromSpriteSheet(entityId, "fire", 0, 8, 5e-3, true));
-        break;
-    }
-    return animations;
-  }
-  function createAnimationFromSpriteSheet(entityId, animationName, row, numFrames, frameDuration, loop) {
-    const spriteSheet = SpriteSheetParser.getSpriteSheet(entityId, animationName);
-    if (!spriteSheet) {
-      throw new Error(`Sprite sheet not found for entityId: ${entityId} and animation: ${animationName}`);
-    }
-    const frames = [];
-    for (let col = 0; col < numFrames; col++) {
-      const spriteData = spriteSheet[row][col];
-      if (!spriteData) {
-        throw new Error(`Sprite data not found for row: ${row} and col: ${col} in ${entityId}-${animationName}`);
-      }
-      frames.push(spriteData);
-    }
-    return new Animation(animationName, frames, frameDuration, loop);
-  }
-
-  // src/components/ItemComponent.ts
-  var ItemComponent = class extends Component {
-    constructor(name, description, icon, dropPosition = new Vector2D(0, 0), isDropped = false) {
-      super();
-      this.name = name;
-      this.description = description;
-      this.icon = icon;
-      this.dropPosition = dropPosition;
-      this.isDropped = isDropped;
-    }
-  };
-
-  // src/sprites/itemFactory.ts
-  async function loadItems() {
-    const items = [
-      { name: "Cheese", description: "A cheese.", row: 4, col: 0 },
-      { name: "Key", description: "A key", row: 5, col: 0 },
-      { name: "Green Ring", description: "A green ring.", row: 5, col: 1 },
-      { name: "Blue Ring", description: "A blue ring.", row: 4, col: 1 },
-      { name: "Blue Potion", description: "A blue potion.", row: 0, col: 0 },
-      { name: "Red Potion", description: "A red potion.", row: 1, col: 0 }
-    ];
-    const itemComponents = /* @__PURE__ */ new Map();
-    for (const itemData of items) {
-      const spriteData = SpriteSheetParser.getSprite("items", "all-items", itemData.row, itemData.col);
-      if (spriteData) {
-        const itemComponent = new ItemComponent(itemData.name, itemData.description, spriteData);
-        itemComponents.set(itemData.name, itemComponent);
-      } else {
-        throw new Error(`Sprite data not found for item: ${itemData.name}`);
-      }
-    }
-    return itemComponents;
-  }
 
   // src/ai/BehaviorTree.ts
   var BehaviorTree = class {
@@ -1735,18 +1848,17 @@
       this.levelInitializer = new LevelInitializer(this.entityManager);
     }
     async initialize() {
-      await this.loadSprites();
+      this.loadSprites();
       this.createPlayer();
-      await this.createEnemies();
+      this.createEnemies();
       this.createWorldInventory();
       await this.createLevels();
-      await this.createProps();
       this.addSystems();
       this.game.run();
     }
-    async loadSprites() {
+    loadSprites() {
       for (const path of this.config.spriteSheetPaths) {
-        await SpriteSheetParser.extractSprites(
+        SpriteSheetParser.extractSprites(
           path.entityId,
           path.spriteSheetName,
           path.spriteWidth,
@@ -1758,16 +1870,11 @@
       }
     }
     createPlayer() {
-      const playerAnimations = createEntityAnimations("player");
-      createPlayerEntity(this.entityManager, playerAnimations);
+      createPlayerEntity(this.entityManager);
     }
-    async createEnemies() {
-      const enemyAnimations = createEntityAnimations("enemy");
-      const items = await loadItems();
-      const enemyLoot = [];
-      enemyLoot.push(items.get("Key"));
+    createEnemies() {
       for (let i = 1; i < 2; i++) {
-        createEnemyEntity(this.entityManager, `enemy${i}`, 110, 10, enemyAnimations, enemyLoot);
+        createEnemyEntity(this.entityManager, `enemy${i}`, 110, 10);
       }
     }
     createWorldInventory() {
@@ -1778,12 +1885,6 @@
       for (const levelData of this.config.levels) {
         await this.levelInitializer.createEntitiesFromLevelArray(levelData.data, levelData.spriteSheets);
       }
-    }
-    async createProps() {
-      const torchAnimations = createEntityAnimations("torch");
-      const torch = EntityFactory.create().name("torch").size(16, 16).position(new Vector2D(105, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
-      const torch2 = EntityFactory.create().name("torch").size(16, 16).position(new Vector2D(129, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
-      this.entityManager.addEntities([torch, torch2]);
     }
     addSystems() {
       const aiSystem = new AISystem(this.entityManager);
@@ -1816,7 +1917,7 @@
       "wall-tiles",
       "door-tiles"
     ],
-    // [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn]
+    // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
     data: [
       [[0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 3, 1], [0, 4, 1, 1, 4, 1]],
       [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
@@ -1851,114 +1952,6 @@
   // src/main.ts
   var gameConfig = {
     spriteSheetPaths: [
-      {
-        entityId: "torch",
-        spriteSheetName: "fire",
-        spriteWidth: 16,
-        spriteHeight: 16,
-        imageWidth: 160,
-        imageHeight: 160,
-        spriteSheetUrl: "./assets/spritesheets/decorations/Minifantasy_DungeonTorch.png"
-      },
-      {
-        entityId: "items",
-        spriteSheetName: "all-items",
-        spriteWidth: 16,
-        spriteHeight: 16,
-        imageWidth: 160,
-        imageHeight: 160,
-        spriteSheetUrl: "./assets/spritesheets/items/items.png"
-      },
-      {
-        entityId: "enemy",
-        spriteSheetName: "idle",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 512,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseIdle.png"
-      },
-      {
-        entityId: "enemy",
-        spriteSheetName: "run",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 128,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseWalk.png"
-      },
-      {
-        entityId: "enemy",
-        spriteSheetName: "attack",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 128,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseAttack.png"
-      },
-      {
-        entityId: "enemy",
-        spriteSheetName: "hurt",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 128,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseDmg.png"
-      },
-      {
-        entityId: "enemy",
-        spriteSheetName: "die",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 384,
-        imageHeight: 32,
-        spriteSheetUrl: "./assets/spritesheets/enemy/Minifantasy_CreaturesOrcBaseDie.png"
-      },
-      {
-        entityId: "player",
-        spriteSheetName: "idle",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 512,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseIdle.png"
-      },
-      {
-        entityId: "player",
-        spriteSheetName: "run",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 128,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseWalk.png"
-      },
-      {
-        entityId: "player",
-        spriteSheetName: "attack",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 128,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseAttack.png"
-      },
-      {
-        entityId: "player",
-        spriteSheetName: "hurt",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 128,
-        imageHeight: 128,
-        spriteSheetUrl: "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseDmg.png"
-      },
-      {
-        entityId: "player",
-        spriteSheetName: "die",
-        spriteWidth: 32,
-        spriteHeight: 32,
-        imageWidth: 384,
-        imageHeight: 32,
-        spriteSheetUrl: "./assets/spritesheets/player/Minifantasy_CreaturesHumanBaseSoulDie.png"
-      },
       {
         entityId: "dungeon-tiles",
         spriteSheetName: "floor-tiles",

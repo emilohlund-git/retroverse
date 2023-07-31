@@ -9,7 +9,7 @@ export const levelOne: LevelData = {
         "wall-tiles",
         "door-tiles",
     ],
-    // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
+    // [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn]
     data: [
         [[0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 3, 1], [0, 4, 1, 1, 4, 1]],
         [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],

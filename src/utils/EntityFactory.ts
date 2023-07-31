@@ -5,6 +5,7 @@ import { CombatComponent } from "../components/CombatCompontent";
 import { DebugComponent } from "../components/DebugComponent";
 import { InteractableComponent, InteractionConditions } from "../components/InteractableComponent";
 import { InventoryComponent } from "../components/InventoryComponent";
+import { ItemComponent } from "../components/ItemComponent";
 import { LayerComponent } from "../components/LayerComponent";
 import { MovementComponent } from "../components/MovementComponent";
 import { PlayerComponent } from "../components/PlayerComponent";
@@ -14,8 +15,8 @@ import { RenderComponent } from "../components/RenderComponent";
 import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
-import { Animation } from "../sprites/Animation";
-import { SpriteData } from "./SpriteSheetParser";
+import { Animation } from "../sprites/animations/Animation";
+import { SpriteData } from "../sprites/SpriteSheetParser";
 import { Vector2D } from "./Vector2D";
 
 export class EntityFactory {
@@ -61,8 +62,8 @@ export class EntityFactory {
     return this;
   }
 
-  inventory(maxCapacity?: number): this {
-    const inventoryComponent = new InventoryComponent([], maxCapacity);
+  inventory(maxCapacity?: number, items: ItemComponent[] = []): this {
+    const inventoryComponent = new InventoryComponent(items, maxCapacity);
     this.entity.addComponent("InventoryComponent", inventoryComponent);
     return this;
   }
