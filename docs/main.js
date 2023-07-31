@@ -1966,7 +1966,7 @@
         spriteHeight: 8,
         imageWidth: 56,
         imageHeight: 16,
-        spriteSheetUrl: "./assets/tiles/MiniFantasy_DungeonFloorTiles.png"
+        spriteSheetUrl: "./assets/tiles/Minifantasy_DungeonFloorTiles.png"
       },
       {
         entityId: "dungeon-tiles",
@@ -1975,7 +1975,7 @@
         spriteHeight: 8,
         imageWidth: 56,
         imageHeight: 112,
-        spriteSheetUrl: "./assets/tiles/MiniFantasy_DungeonWallTiles.png"
+        spriteSheetUrl: "./assets/tiles/Minifantasy_DungeonWallTiles.png"
       },
       {
         entityId: "dungeon-tiles",
@@ -1984,7 +1984,7 @@
         spriteHeight: 8,
         imageWidth: 8,
         imageHeight: 16,
-        spriteSheetUrl: "./assets/tiles/MiniFantasy_DungeonDoorTiles.png"
+        spriteSheetUrl: "./assets/tiles/Minifantasy_DungeonDoorTiles.png"
       }
     ],
     levels: [levelOne]
