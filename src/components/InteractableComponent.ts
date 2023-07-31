@@ -7,8 +7,10 @@ export interface InteractionConditions {
 
 export class InteractableComponent extends Component {
   constructor(
-    public interacted: boolean = false,
+    public interacting: boolean = false,
     public conditions: InteractionConditions[] = [],
+    public interactionAction: (...args: any[]) => any,
+    public interactionItemName?: string,
   ) {
     super();
   }

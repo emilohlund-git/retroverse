@@ -4,6 +4,7 @@
     "RenderSystem",
     "CombatSystem",
     "Components",
-    "InventorySystem"
+    "InventorySystem",
+    "InputSystem"
   ]
 }

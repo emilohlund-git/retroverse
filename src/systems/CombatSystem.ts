@@ -116,8 +116,6 @@ export class CombatSystem extends System {
         // TODO: Fix angles, currently the player can attack the enemy only from right
         const allowedAngleDifference = (Math.PI / 180) * 45;
 
-        console.log("Adjusted Angle Difference: " + adjustedAngleDifference, "Allowed Angle Difference: " + allowedAngleDifference, "Angle Difference: " + angleDifference, "Angle To Target: " + angleToTarget);
-
         if (Math.abs(adjustedAngleDifference) >= allowedAngleDifference &&
           distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
           closestTarget = potentialTarget;

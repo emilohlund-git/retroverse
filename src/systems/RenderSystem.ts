@@ -106,7 +106,6 @@ export class RenderSystem extends System {
     if (animationComponent) {
       const animation = animationComponent.animations.get(animationComponent.currentAnimation);
       const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
-      console.log(animationComponent);
       if (!currentAnimationFrame) return;
 
       const cameraX = playerPosition.x - this.cameraWidth / 2;

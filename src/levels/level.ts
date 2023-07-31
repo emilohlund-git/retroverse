@@ -1,4 +1,9 @@
-export const levelOne = {
+export interface LevelData {
+    spriteSheets: string[],
+    data: number[][][];
+}
+
+export const levelOne: LevelData = {
     spriteSheets: [
         "floor-tiles",
         "wall-tiles",

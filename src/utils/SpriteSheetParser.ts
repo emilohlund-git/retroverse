@@ -18,6 +18,16 @@ export interface EntitiesSpriteSheets {
   [entityId: string]: EntitySpriteSheet;
 }
 
+export interface SpriteSheetInformation {
+  entityId: string;
+  spriteSheetName: string;
+  spriteWidth: number;
+  spriteHeight: number;
+  imageWidth: number;
+  imageHeight: number;
+  spriteSheetUrl: string;
+}
+
 export class SpriteSheetParser {
   private static spriteSheets: EntitiesSpriteSheets = {};
 

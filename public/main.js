@@ -2,8 +2,8 @@
 (() => {
   // src/Game.ts
   var Game = class {
-    constructor(entityManager2) {
-      this.entityManager = entityManager2;
+    constructor(entityManager) {
+      this.entityManager = entityManager;
       this.lastUpdateTime = 0;
       this.systems = /* @__PURE__ */ new Set();
     }
@@ -41,28 +41,6 @@
     }
   };
 
-  // src/components/Component.ts
-  var Component = class {
-  };
-
-  // src/components/CollisionComponent.ts
-  var CollisionComponent = class extends Component {
-    constructor(collisionType = "box" /* BOX */, offsetX = 0, offsetY = 0, width, height) {
-      super();
-      this.collisionType = collisionType;
-      this.offsetX = offsetX;
-      this.offsetY = offsetY;
-      this.width = width;
-      this.height = height;
-      this.collisionDetails = {
-        top: false,
-        left: false,
-        right: false,
-        bottom: false
-      };
-    }
-  };
-
   // src/entities/EntityManager.ts
   var EntityManager = class {
     constructor() {
@@ -88,6 +66,28 @@
         }
       });
       return Array.from(uniqueEntities);
+    }
+  };
+
+  // src/components/Component.ts
+  var Component = class {
+  };
+
+  // src/components/CollisionComponent.ts
+  var CollisionComponent = class extends Component {
+    constructor(collisionType = "box" /* BOX */, offsetX = 0, offsetY = 0, width, height) {
+      super();
+      this.collisionType = collisionType;
+      this.offsetX = offsetX;
+      this.offsetY = offsetY;
+      this.width = width;
+      this.height = height;
+      this.collisionDetails = {
+        top: false,
+        left: false,
+        right: false,
+        bottom: false
+      };
     }
   };
 
@@ -332,9 +332,9 @@
 
   // src/components/DebugComponent.ts
   var DebugComponent = class extends Component {
-    constructor(entityManager2, excludedComponents2 = []) {
+    constructor(entityManager, excludedComponents2 = []) {
       super();
-      this.entityManager = entityManager2;
+      this.entityManager = entityManager;
       this.excludedComponents = excludedComponents2;
       this.debugDiv = document.createElement("div");
       this.debugDiv.id = "debug-window";
@@ -373,10 +373,12 @@
 
   // src/components/InteractableComponent.ts
   var InteractableComponent = class extends Component {
-    constructor(interacted = false, conditions = []) {
+    constructor(interacting = false, conditions = [], interactionAction, interactionItemName) {
       super();
-      this.interacted = interacted;
+      this.interacting = interacting;
       this.conditions = conditions;
+      this.interactionAction = interactionAction;
+      this.interactionItemName = interactionItemName;
     }
   };
 
@@ -496,8 +498,8 @@
       this.entity.addComponent("PositionComponent", new PositionComponent(position));
       return this;
     }
-    interactable(conditions) {
-      this.entity.addComponent("InteractableComponent", new InteractableComponent(false, conditions));
+    interactable(conditions, interactionAction, interactionItemName) {
+      this.entity.addComponent("InteractableComponent", new InteractableComponent(false, conditions, interactionAction, interactionItemName));
       return this;
     }
     prop() {
@@ -552,8 +554,8 @@
       this.entity.addComponent("AIComponent", new AIComponent(aggroRange));
       return this;
     }
-    debug(entityManager2, excludedComponents2) {
-      this.entity.addComponent("DebugComponent", new DebugComponent(entityManager2, excludedComponents2));
+    debug(entityManager, excludedComponents2) {
+      this.entity.addComponent("DebugComponent", new DebugComponent(entityManager, excludedComponents2));
       return this;
     }
     build() {
@@ -578,7 +580,7 @@
   animations.set(enemyAttackUpAnimation.name, enemyAttackUpAnimation);
   animations.set(enemyHurtAnimation.name, enemyHurtAnimation);
   animations.set(enemyDeathAnimation.name, enemyDeathAnimation);
-  function createEnemyEntity(entityManager2, name, positionX, positionY) {
+  function createEnemyEntity(entityManager, name, positionX, positionY) {
     const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 0, 0, 16, 16).combat().ai(50).animations(animations).inventory().layer(3).build();
     const inventory = enemyEntity.getComponent("InventoryComponent");
     for (let i = 0; i < 1; i++) {
@@ -589,7 +591,7 @@
       inventory?.addItem({ ...redPotion });
       inventory?.addItem({ ...greenRing });
     }
-    entityManager2.addEntity(enemyEntity);
+    entityManager.addEntity(enemyEntity);
   }
 
   // src/sprites/playerAnimations.ts
@@ -687,77 +689,69 @@
   animations2.set(playerHurtAnimation.name, playerHurtAnimation);
   animations2.set(playerDeathAnimation.name, playerDeathAnimation);
   var excludedComponents = ["DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
-  function createPlayerEntity(entityManager2) {
-    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 2, 0, 16, 16).player().combat().animations(animations2).layer(2).inventory().debug(entityManager2, excludedComponents).build();
-    entityManager2.addEntity(playerEntity);
+  function createPlayerEntity(entityManager) {
+    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 2, 0, 16, 16).player().combat().animations(animations2).layer(2).inventory().debug(entityManager, excludedComponents).build();
+    entityManager.addEntity(playerEntity);
   }
 
-  // src/levels/level.ts
-  var levelOne = {
-    spriteSheets: [
-      "floor-tiles",
-      "wall-tiles",
-      "door-tiles"
-    ],
-    // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
-    data: [
-      [[0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 3, 1], [0, 4, 1, 1, 4, 1]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 3, 1], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 1, 1, 6, 1], [0, 0, 1, 1, 7, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [1, 0, 1, 2, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 1, 1, 6, 3], [0, 0, 1, 1, 7, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 3, 3], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
-      [[0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 3, 3], [0, 4, 1, 1, 4, 3]]
-    ]
+  // src/levels/LevelInitializer.ts
+  var LevelInitializer = class {
+    constructor(entityManager) {
+      this.entityManager = entityManager;
+    }
+    async createEntitiesFromLevelArray(levelData, spriteSheets) {
+      const entitiesToAdd = [];
+      for (let i = 0; i < levelData.length; i++) {
+        for (let j = 0; j < levelData[i].length; j++) {
+          const [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
+          const spriteSheet = spriteSheets[spriteSheetIndex];
+          const spriteData = SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn);
+          if (spriteData) {
+            const tileEntity = this.createTileEntity(i, j, spriteData, layer, hasCollision);
+            if (interactable === 1) {
+              this.addInteractableComponent(tileEntity, "Key");
+            }
+            entitiesToAdd.push(tileEntity.build());
+          }
+        }
+      }
+      this.entityManager.addEntities(entitiesToAdd);
+    }
+    createTileEntity(i, j, spriteData, layer, hasCollision) {
+      const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(layer).solid(spriteData).tiled(true);
+      if (hasCollision === 1) {
+        tileEntity.collision("box" /* BOX */, -2, -2, 0, 0);
+      }
+      return tileEntity;
+    }
+    addInteractableComponent(entityFactory, interactionItemName) {
+      const interactionAction = (inventory, interactable, interactableEntity) => {
+        const itemToRemove = inventory.items.find((i) => i.name === interactable.interactionItemName);
+        if (itemToRemove && interactable.interactionItemName) {
+          inventory.removeItem(itemToRemove);
+        }
+        const solidComponent = interactableEntity.getComponent("SolidComponent");
+        if (!solidComponent)
+          return;
+        solidComponent.spriteData.y += solidComponent.spriteData.height;
+        interactableEntity.removeComponent("CollisionComponent");
+      };
+      const conditions = [{
+        hasItem(inventory, item) {
+          return inventory.items.findIndex((i) => i.name === item) !== -1;
+        }
+      }];
+      entityFactory.interactable(conditions, interactionAction, interactionItemName);
+    }
   };
-
-  // src/sprites/torchAnimation.ts
-  SpriteSheetParser.extractSprites("torch", "torch", 16, 16, 128, 24, "./assets/spritesheets/decorations/Minifantasy_DungeonTorch.png");
-  var torchFireSpriteSheet = SpriteSheetParser.getSpriteSheet("torch", "torch");
-  var torchFireAnimation = new Animation("idle", [
-    torchFireSpriteSheet[0][0],
-    torchFireSpriteSheet[0][1],
-    torchFireSpriteSheet[0][2],
-    torchFireSpriteSheet[0][3],
-    torchFireSpriteSheet[0][4],
-    torchFireSpriteSheet[0][5],
-    torchFireSpriteSheet[0][6],
-    torchFireSpriteSheet[0][7]
-  ], 5e-3, true);
-
-  // src/sprites/props.ts
-  var torchAnimations = /* @__PURE__ */ new Map();
-  torchAnimations.set("fire", torchFireAnimation);
-  var torch = EntityFactory.create().size(16, 16).position(new Vector2D(105, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
-  var torch2 = EntityFactory.create().size(16, 16).position(new Vector2D(129, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
 
   // src/ai/BehaviorTree.ts
   var BehaviorTree = class {
     constructor(rootNode) {
       this.rootNode = rootNode;
     }
-    tick(entityManager2) {
-      return this.rootNode.tick(entityManager2);
+    tick(entityManager) {
+      return this.rootNode.tick(entityManager);
     }
   };
 
@@ -779,7 +773,7 @@
       this.enemyEntity = enemyEntity;
       this.playerEntity = playerEntity;
     }
-    tick(entityManager2) {
+    tick(entityManager) {
       if (!this.playerEntity) {
         return "FAILURE";
       }
@@ -804,7 +798,7 @@
       const directionX = playerPositionComponent.position.x - positionComponent.position.x;
       const directionY = playerPositionComponent.position.y - positionComponent.position.y;
       const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
-      if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager2, positionComponent, playerPositionComponent, aiComponent) && !playerCombatComponent.isDead) {
+      if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent) && !playerCombatComponent.isDead) {
         if (distanceToPlayer < 10) {
           aiComponent.isChasing = false;
           if (combatComponent.attackCooldown < 1) {
@@ -830,8 +824,8 @@
       }
       return "RUNNING";
     }
-    hasLineOfSight(entityManager2, entityPosition, playerPosition, aiComponent) {
-      const obstacles = entityManager2.getEntitiesByComponents(["SolidComponent", "CollisionComponent"]);
+    hasLineOfSight(entityManager, entityPosition, playerPosition, aiComponent) {
+      const obstacles = entityManager.getEntitiesByComponents(["SolidComponent", "CollisionComponent"]);
       const directionX = playerPosition.position.x - entityPosition.position.x;
       const directionY = playerPosition.position.y - entityPosition.position.y;
       const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
@@ -876,9 +870,9 @@
     constructor(children) {
       this.children = children;
     }
-    tick(entityManager2) {
+    tick(entityManager) {
       for (const child of this.children) {
-        const status = child.tick(entityManager2);
+        const status = child.tick(entityManager);
         if (status === "SUCCESS") {
           return "SUCCESS";
         }
@@ -893,12 +887,12 @@
 
   // src/systems/AISystem.ts
   var AISystem = class extends System {
-    constructor(entityManager2) {
+    constructor(entityManager) {
       super();
-      this.entityManager = entityManager2;
+      this.entityManager = entityManager;
       this.behaviorTrees = /* @__PURE__ */ new Map();
-      const aiEntities = entityManager2.getEntitiesByComponent("AIComponent");
-      const playerEntity = entityManager2.getEntitiesByComponent("PlayerComponent")[0];
+      const aiEntities = entityManager.getEntitiesByComponent("AIComponent");
+      const playerEntity = entityManager.getEntitiesByComponent("PlayerComponent")[0];
       for (const enemyEntity of aiEntities) {
         const positionComponent = enemyEntity.getComponent("PositionComponent");
         if (!positionComponent)
@@ -912,9 +906,9 @@
     }
     preload() {
     }
-    update(_, entityManager2) {
+    update(_, entityManager) {
       this.behaviorTrees.forEach((behaviorTree, _2) => {
-        behaviorTree.tick(entityManager2);
+        behaviorTree.tick(entityManager);
       });
     }
     render() {
@@ -944,8 +938,8 @@
     }
     preload() {
     }
-    update(deltaTime, entityManager2) {
-      const entitiesWithAnimations = entityManager2.getEntitiesByComponent("AnimationComponent");
+    update(deltaTime, entityManager) {
+      const entitiesWithAnimations = entityManager.getEntitiesByComponent("AnimationComponent");
       for (const entity of entitiesWithAnimations) {
         const animationComponent = entity.getComponent("AnimationComponent");
         if (!animationComponent)
@@ -1007,9 +1001,9 @@
     }
     preload() {
     }
-    update(deltaTime, entityManager2) {
-      const solidEntities = entityManager2.getEntitiesByComponent("SolidComponent");
-      const collisionEntities = entityManager2.getEntitiesByComponent("MovementComponent");
+    update(deltaTime, entityManager) {
+      const solidEntities = entityManager.getEntitiesByComponent("SolidComponent");
+      const collisionEntities = entityManager.getEntitiesByComponent("MovementComponent");
       if (!collisionEntities)
         return;
       for (const entity of collisionEntities) {
@@ -1127,8 +1121,8 @@
     }
     preload() {
     }
-    update(deltaTime, entityManager2) {
-      const entitiesWithCombat = entityManager2.getEntitiesByComponent("CombatComponent");
+    update(deltaTime, entityManager) {
+      const entitiesWithCombat = entityManager.getEntitiesByComponent("CombatComponent");
       for (const attacker of entitiesWithCombat) {
         const attackerCombat = attacker.getComponent("CombatComponent");
         if (!attackerCombat)
@@ -1157,7 +1151,7 @@
           attackerMovement
         );
         if (closestTarget) {
-          this.handleAttack(attacker, closestTarget, entityManager2);
+          this.handleAttack(attacker, closestTarget, entityManager);
         }
       }
     }
@@ -1194,7 +1188,6 @@
           const angleDifference = angleToTarget - attackerMovement.currentFacingAngle;
           const adjustedAngleDifference = (angleDifference + Math.PI) % (2 * Math.PI) - Math.PI;
           const allowedAngleDifference = Math.PI / 180 * 45;
-          console.log("Adjusted Angle Difference: " + adjustedAngleDifference, "Allowed Angle Difference: " + allowedAngleDifference, "Angle Difference: " + angleDifference, "Angle To Target: " + angleToTarget);
           if (Math.abs(adjustedAngleDifference) >= allowedAngleDifference && distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
             closestTarget = potentialTarget;
             closestDistanceSq = distanceSq;
@@ -1203,15 +1196,15 @@
       }
       return closestTarget;
     }
-    handleAttack(attacker, target, entityManager2) {
+    handleAttack(attacker, target, entityManager) {
       const attackerCombat = attacker.getComponent("CombatComponent");
       const targetCombat = target.getComponent("CombatComponent");
       const targetAnimationComponent = target.getComponent("AnimationComponent");
       const targetInventoryComponent = target.getComponent("InventoryComponent");
       const targetPositionComponent = target.getComponent("PositionComponent");
-      const world = entityManager2.getEntityByName("world-inventory");
-      const worldInventory2 = world?.getComponent("InventoryComponent");
-      if (!worldInventory2)
+      const world = entityManager.getEntityByName("world-inventory");
+      const worldInventory = world?.getComponent("InventoryComponent");
+      if (!worldInventory)
         return;
       if (!attackerCombat || !targetCombat || !targetPositionComponent)
         return;
@@ -1231,7 +1224,7 @@
                 targetPositionComponent.position.y - randomYOffset
               );
               item.isDropped = true;
-              worldInventory2.addItem(item);
+              worldInventory.addItem(item);
             }
             if (targetAnimationComponent) {
               targetAnimationComponent.currentFrameIndex = 0;
@@ -1258,9 +1251,9 @@
     }
     preload() {
     }
-    update(deltaTime, entityManager2) {
-      const interactableEntities = entityManager2.getEntitiesByComponent("InteractableComponent");
-      const player = entityManager2.getEntitiesByComponent("PlayerComponent")[0];
+    update(deltaTime, entityManager) {
+      const interactableEntities = entityManager.getEntitiesByComponent("InteractableComponent");
+      const player = entityManager.getEntitiesByComponent("PlayerComponent")[0];
       const movementComponent = player.getComponent("MovementComponent");
       if (!movementComponent)
         return;
@@ -1296,19 +1289,7 @@
       }
       if (inventoryComponent) {
         if (this.pressedKeys.has("E")) {
-          interactableEntities.forEach((i) => {
-            const interactablePosition = i.getComponent("PositionComponent")?.position;
-            const solidComponent = i.getComponent("SolidComponent");
-            const interactableComponent = i.getComponent("InteractableComponent");
-            if (interactablePosition && solidComponent && interactableComponent && !interactableComponent.interacted) {
-              if (calculateDistance(positionComponent.position, interactablePosition) <= 20) {
-                if (this.areConditionsSatisfied(i, interactableComponent, inventoryComponent, "Key")) {
-                  solidComponent.spriteData.y += solidComponent.spriteData.height;
-                  interactableComponent.interacted = true;
-                }
-              }
-            }
-          });
+          this.checkInteractions(interactableEntities, positionComponent.position);
           inventoryComponent.pickingUp = true;
         } else {
           inventoryComponent.pickingUp = false;
@@ -1337,15 +1318,55 @@
     handleBlur() {
       this.pressedKeys.clear();
     }
-    areConditionsSatisfied(interactableEntity, interactable, inventory, itemName) {
+    checkInteractions(interactableEntities, playerPosition) {
+      interactableEntities.forEach((i) => {
+        const interactablePosition = i.getComponent("PositionComponent")?.position;
+        const solidComponent = i.getComponent("SolidComponent");
+        const interactableComponent = i.getComponent("InteractableComponent");
+        if (interactablePosition && solidComponent && interactableComponent && !interactableComponent.interacting) {
+          if (calculateDistance(playerPosition, interactablePosition) <= 15) {
+            interactableComponent.interacting = true;
+          }
+        }
+      });
+    }
+  };
+
+  // src/systems/InteractionSystem.ts
+  var InteractionSystem = class extends System {
+    constructor() {
+      super();
+    }
+    preload() {
+    }
+    update(deltaTime, entityManager) {
+      const player = entityManager.getEntityByName("player");
+      if (!player)
+        throw new Error("Player not instantiated.");
+      const playerInventory = player.getComponent("InventoryComponent");
+      if (!playerInventory)
+        return;
+      const interactableEntities = entityManager.getEntitiesByComponent("InteractableComponent");
+      for (const entity of interactableEntities) {
+        const interactableComponent = entity.getComponent("InteractableComponent");
+        if (!interactableComponent)
+          continue;
+        if (interactableComponent.interacting) {
+          if (this.areConditionsSatisfied(entity, interactableComponent, playerInventory)) {
+            interactableComponent.interactionAction(playerInventory, interactableComponent, entity);
+            interactableComponent.interacting = false;
+          }
+        }
+      }
+    }
+    render() {
+    }
+    areConditionsSatisfied(interactableEntity, interactable, inventory) {
       for (const condition of interactable.conditions) {
         if (condition.hasItem) {
-          const conditionSatisfied = condition.hasItem(inventory, itemName);
-          const item = inventory.items.find((i) => i.name === itemName);
-          if (item) {
-            inventory.removeItem(inventory.items.find((i) => i.name === itemName));
-            interactableEntity.removeComponent("CollisionComponent");
-          }
+          if (!interactable.interactionItemName)
+            continue;
+          const conditionSatisfied = condition.hasItem(inventory, interactable.interactionItemName);
           if (!conditionSatisfied) {
             return false;
           }
@@ -1379,11 +1400,11 @@
       this.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
       this.canvas.addEventListener("mouseleave", this.handleMouseLeave.bind(this));
     }
-    preload(entityManager2) {
+    preload(entityManager) {
     }
-    update(deltaTime, entityManager2) {
+    update(deltaTime, entityManager) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      const player = entityManager2.getEntitiesByComponent("PlayerComponent")[0];
+      const player = entityManager.getEntitiesByComponent("PlayerComponent")[0];
       const playerPosition = player.getComponent("PositionComponent")?.position;
       const inventory = player.getComponent("InventoryComponent");
       if (!inventory)
@@ -1391,7 +1412,7 @@
       this.playerInventory = inventory;
       this.updatePlayerInventory(inventory);
       if (playerPosition && inventory.pickingUp) {
-        this.handlePickupInteraction(playerPosition, entityManager2);
+        this.handlePickupInteraction(playerPosition, entityManager);
       }
     }
     render() {
@@ -1446,16 +1467,16 @@
     addToPlayerInventory(item) {
       this.playerInventory?.items.push(item);
     }
-    handlePickupInteraction(playerPosition, entityManager2) {
+    handlePickupInteraction(playerPosition, entityManager) {
       if (!this.playerInventory)
         return;
-      const world = entityManager2.getEntityByName("world-inventory");
+      const world = entityManager.getEntityByName("world-inventory");
       if (!world)
         return;
-      const worldInventory2 = world.getComponent("InventoryComponent");
-      if (!worldInventory2)
+      const worldInventory = world.getComponent("InventoryComponent");
+      if (!worldInventory)
         return;
-      for (const item of worldInventory2.items) {
+      for (const item of worldInventory.items) {
         if (item.isDropped) {
           const distanceToItem = this.calculateDistance(playerPosition, item.dropPosition);
           const pickupDistance = 20;
@@ -1549,8 +1570,8 @@
     }
     preload() {
     }
-    update(_, entityManager2) {
-      const movementEntities = entityManager2.getEntitiesByComponent("MovementComponent");
+    update(_, entityManager) {
+      const movementEntities = entityManager.getEntitiesByComponent("MovementComponent");
       for (const entity of movementEntities) {
         const movementComponent = entity.getComponent("MovementComponent");
         if (!movementComponent)
@@ -1624,29 +1645,29 @@
     }
     preload() {
     }
-    update(_, entityManager2) {
+    update(_, entityManager) {
       this.render();
-      this.updateCamera(entityManager2);
-      const playerEntity = entityManager2.getEntityByName("player");
+      this.updateCamera(entityManager);
+      const playerEntity = entityManager.getEntityByName("player");
       if (!playerEntity)
         return;
       const playerPositionComponent = playerEntity.getComponent("PositionComponent");
       if (playerPositionComponent) {
         this.applyLighting(playerPositionComponent.position);
-        this.updateRenderingBatches(entityManager2);
+        this.updateRenderingBatches(entityManager);
         this.renderEntities(playerPositionComponent.position);
-        this.renderDroppedItems(playerPositionComponent.position, entityManager2);
+        this.renderDroppedItems(playerPositionComponent.position, entityManager);
       }
     }
-    updateCamera(entityManager2) {
+    updateCamera(entityManager) {
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.scale(this.zoomFactor, this.zoomFactor);
     }
-    updateRenderingBatches(entityManager2) {
+    updateRenderingBatches(entityManager) {
       this.renderingBatches.clear();
-      const animationEntities = entityManager2.getEntitiesByComponent("AnimationComponent");
-      const staticEntities = entityManager2.getEntitiesByComponents(["SolidComponent", "RenderComponent"]);
+      const animationEntities = entityManager.getEntitiesByComponent("AnimationComponent");
+      const staticEntities = entityManager.getEntitiesByComponents(["SolidComponent", "RenderComponent"]);
       for (const entity of [...animationEntities, ...staticEntities]) {
         const layerComponent = entity.getComponent("LayerComponent");
         const layer = layerComponent ? layerComponent.layer : 0;
@@ -1683,7 +1704,6 @@
       if (animationComponent) {
         const animation = animationComponent.animations.get(animationComponent.currentAnimation);
         const currentAnimationFrame = animation?.frames[animationComponent.currentFrameIndex];
-        console.log(animationComponent);
         if (!currentAnimationFrame)
           return;
         const cameraX = playerPosition.x - this.cameraWidth / 2;
@@ -1726,17 +1746,17 @@
         }
       }
     }
-    renderDroppedItems(playerPosition, entityManager2) {
-      const world = entityManager2.getEntityByName("world-inventory");
+    renderDroppedItems(playerPosition, entityManager) {
+      const world = entityManager.getEntityByName("world-inventory");
       if (!world)
         return;
-      const worldInventory2 = world?.getComponent("InventoryComponent");
+      const worldInventory = world?.getComponent("InventoryComponent");
       const positionComponent = world.getComponent("PositionComponent");
-      if (!worldInventory2 || !positionComponent)
+      if (!worldInventory || !positionComponent)
         return;
       const cameraX = playerPosition.x - this.cameraWidth / 2;
       const cameraY = playerPosition.y - this.cameraHeight / 2;
-      for (const item of worldInventory2.items) {
+      for (const item of worldInventory.items) {
         const adjustedX = item.dropPosition.x - cameraX;
         const adjustedY = item.dropPosition.y - cameraY;
         if (item.isDropped) {
@@ -1819,61 +1839,149 @@
     }
   };
 
-  // src/main.ts
-  SpriteSheetParser.extractSprites("dungeon-tiles", "floor-tiles", 8, 8, 56, 16, "./assets/tiles/MiniFantasy_DungeonFloorTiles.png");
-  SpriteSheetParser.extractSprites("dungeon-tiles", "wall-tiles", 8, 8, 56, 112, "./assets/tiles/MiniFantasy_DungeonWallTiles.png");
-  SpriteSheetParser.extractSprites("dungeon-tiles", "door-tiles", 8, 8, 8, 16, "./assets/tiles/Minifantasy_DungeonDoorTiles.png");
-  var entityManager = new EntityManager();
-  var renderSystem = new RenderSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
-  var inputSystem = new InputSystem();
-  var movementSystem = new MovementSystem();
-  var collisionSystem = new CollisionSystem();
-  var animationSystem = new AnimationSystem();
-  var combatSystem = new CombatSystem();
-  var inventorySystem = new InventorySystem();
-  createPlayerEntity(entityManager);
-  for (let i = 1; i < 2; i++) {
-    createEnemyEntity(entityManager, `enemy${i}`, 110, 10);
-  }
-  var worldInventory = EntityFactory.create().name("world-inventory").position(new Vector2D(0, 0)).inventory(200).build();
-  entityManager.addEntity(worldInventory);
-  function createEntitiesFromLevelArray(levelData, spriteSheets, entityManager2) {
-    const entitiesToAdd = [];
-    for (let i = 0; i < levelData.length; i++) {
-      for (let j = 0; j < levelData[i].length; j++) {
-        const [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
-        const spriteSheet = spriteSheets[spriteSheetIndex];
-        const spriteData = SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn);
-        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(layer).solid(spriteData).tiled(true);
-        if (hasCollision === 1) {
-          tileEntity.collision("box" /* BOX */, -2, -2, 0, 0);
-        }
-        if (interactable === 1) {
-          const conditions = [{
-            hasItem(inventory, item) {
-              return inventory.items.findIndex((i2) => i2.name === item) !== -1;
-            }
-          }];
-          tileEntity.interactable(conditions);
-        }
-        entitiesToAdd.push(tileEntity.build());
+  // src/GameInitializer.ts
+  var GameInitializer = class {
+    constructor(config) {
+      this.config = config;
+      this.entityManager = new EntityManager();
+      this.game = new Game(this.entityManager);
+      this.levelInitializer = new LevelInitializer(this.entityManager);
+    }
+    async initialize() {
+      this.loadSprites();
+      this.createPlayer();
+      this.createEnemies();
+      this.createWorldInventory();
+      await this.createLevels();
+      this.addSystems();
+      this.game.run();
+    }
+    loadSprites() {
+      for (const path of this.config.spriteSheetPaths) {
+        SpriteSheetParser.extractSprites(
+          path.entityId,
+          path.spriteSheetName,
+          path.spriteWidth,
+          path.spriteHeight,
+          path.imageWidth,
+          path.imageHeight,
+          path.spriteSheetUrl
+        );
       }
     }
-    entityManager2.addEntities(entitiesToAdd);
-  }
-  entityManager.addEntities([torch, torch2]);
-  createEntitiesFromLevelArray(levelOne.data, levelOne.spriteSheets, entityManager);
-  var aiSystem = new AISystem(entityManager);
-  var game = new Game(entityManager);
-  game.addSystems([
-    animationSystem,
-    inputSystem,
-    movementSystem,
-    renderSystem,
-    inventorySystem,
-    collisionSystem,
-    aiSystem,
-    combatSystem
-  ]);
-  game.run();
+    createPlayer() {
+      createPlayerEntity(this.entityManager);
+    }
+    createEnemies() {
+      for (let i = 1; i < 2; i++) {
+        createEnemyEntity(this.entityManager, `enemy${i}`, 110, 10);
+      }
+    }
+    createWorldInventory() {
+      const worldInventory = EntityFactory.create().name("world-inventory").position(new Vector2D(0, 0)).inventory(200).build();
+      this.entityManager.addEntity(worldInventory);
+    }
+    async createLevels() {
+      for (const levelData of this.config.levels) {
+        await this.levelInitializer.createEntitiesFromLevelArray(levelData.data, levelData.spriteSheets);
+      }
+    }
+    addSystems() {
+      const aiSystem = new AISystem(this.entityManager);
+      const renderSystem = new RenderSystem(TILE_WIDTH * LEVEL_WIDTH, TILE_HEIGHT * LEVEL_HEIGHT);
+      const inputSystem = new InputSystem();
+      const movementSystem = new MovementSystem();
+      const collisionSystem = new CollisionSystem();
+      const animationSystem = new AnimationSystem();
+      const combatSystem = new CombatSystem();
+      const inventorySystem = new InventorySystem();
+      const interactionSystem = new InteractionSystem();
+      this.game.addSystems([
+        animationSystem,
+        inputSystem,
+        movementSystem,
+        renderSystem,
+        inventorySystem,
+        collisionSystem,
+        aiSystem,
+        combatSystem,
+        interactionSystem
+      ]);
+    }
+  };
+
+  // src/levels/level.ts
+  var levelOne = {
+    spriteSheets: [
+      "floor-tiles",
+      "wall-tiles",
+      "door-tiles"
+    ],
+    // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
+    data: [
+      [[0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 3, 1], [0, 4, 1, 1, 4, 1]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 3, 1], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 1, 1, 6, 1], [0, 0, 1, 1, 7, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [1, 0, 1, 2, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 1, 1, 6, 3], [0, 0, 1, 1, 7, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 3, 3], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 3, 3], [0, 4, 1, 1, 4, 3]]
+    ]
+  };
+
+  // src/main.ts
+  var gameConfig = {
+    spriteSheetPaths: [
+      {
+        entityId: "dungeon-tiles",
+        spriteSheetName: "floor-tiles",
+        spriteWidth: 8,
+        spriteHeight: 8,
+        imageWidth: 56,
+        imageHeight: 16,
+        spriteSheetUrl: "./assets/tiles/MiniFantasy_DungeonFloorTiles.png"
+      },
+      {
+        entityId: "dungeon-tiles",
+        spriteSheetName: "wall-tiles",
+        spriteWidth: 8,
+        spriteHeight: 8,
+        imageWidth: 56,
+        imageHeight: 112,
+        spriteSheetUrl: "./assets/tiles/MiniFantasy_DungeonWallTiles.png"
+      },
+      {
+        entityId: "dungeon-tiles",
+        spriteSheetName: "door-tiles",
+        spriteWidth: 8,
+        spriteHeight: 8,
+        imageWidth: 8,
+        imageHeight: 16,
+        spriteSheetUrl: "./assets/tiles/MiniFantasy_DungeonDoorTiles.png"
+      }
+    ],
+    levels: [levelOne]
+  };
+  var initializer = new GameInitializer(gameConfig);
+  initializer.initialize();
 })();

@@ -39,8 +39,8 @@ export class EntityFactory {
     return this;
   }
 
-  interactable(conditions: InteractionConditions[]): this {
-    this.entity.addComponent("InteractableComponent", new InteractableComponent(false, conditions));
+  interactable(conditions: InteractionConditions[], interactionAction: (...args: any[]) => any, interactionItemName?: string): this {
+    this.entity.addComponent("InteractableComponent", new InteractableComponent(false, conditions, interactionAction, interactionItemName));
     return this;
   }
 

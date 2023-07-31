@@ -7,6 +7,7 @@ import { PositionComponent } from "../components/PositionComponent";
 import { SolidComponent } from "../components/SolidComponent";
 import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
+import { Vector2D } from "../utils/Vector2D";
 import { calculateDistance } from "../utils/math";
 import { System } from "./System";
 
@@ -60,20 +61,7 @@ export class InputSystem extends System {
     // Checking for inventory & possible world interactions
     if (inventoryComponent) {
       if (this.pressedKeys.has("E")) {
-        interactableEntities.forEach((i) => {
-          const interactablePosition = i.getComponent<PositionComponent>("PositionComponent")?.position;
-          const solidComponent = i.getComponent<SolidComponent>("SolidComponent");
-          const interactableComponent = i.getComponent<InteractableComponent>("InteractableComponent");
-          if (interactablePosition && solidComponent && interactableComponent && !interactableComponent.interacted) {
-            if (calculateDistance(positionComponent.position, interactablePosition) <= 20) {
-              if (this.areConditionsSatisfied(i, interactableComponent, inventoryComponent, "Key")) {
-                solidComponent.spriteData.y += solidComponent.spriteData.height;
-                interactableComponent.interacted = true;
-              }
-            }
-          }
-        });
-
+        this.checkInteractions(interactableEntities, positionComponent.position);
         inventoryComponent.pickingUp = true;
       } else {
         inventoryComponent.pickingUp = false;
@@ -108,24 +96,16 @@ export class InputSystem extends System {
     this.pressedKeys.clear();
   }
 
-  private areConditionsSatisfied(interactableEntity: Entity, interactable: InteractableComponent, inventory: InventoryComponent, itemName: string): boolean {
-    for (const condition of interactable.conditions) {
-      if (condition.hasItem) {
-        const conditionSatisfied = condition.hasItem(inventory, itemName);
-
-        const item = inventory.items.find((i) => i.name === itemName);
-
-        if (item) {
-          inventory.removeItem(inventory.items.find((i) => i.name === itemName)!);
-          interactableEntity.removeComponent("CollisionComponent");
-        }
-
-        if (!conditionSatisfied) {
-          return false;
+  private checkInteractions(interactableEntities: Entity[], playerPosition: Vector2D) {
+    interactableEntities.forEach((i) => {
+      const interactablePosition = i.getComponent<PositionComponent>("PositionComponent")?.position;
+      const solidComponent = i.getComponent<SolidComponent>("SolidComponent");
+      const interactableComponent = i.getComponent<InteractableComponent>("InteractableComponent");
+      if (interactablePosition && solidComponent && interactableComponent && !interactableComponent.interacting) {
+        if (calculateDistance(playerPosition, interactablePosition) <= 15) {
+          interactableComponent.interacting = true;
         }
       }
-    }
-
-    return true;
+    });
   }
 }
