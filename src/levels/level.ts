@@ -1,5 +1,15 @@
+export interface PropData {
+    name: string;
+    size: [number, number];
+    position: { x: number, y: number };
+    animationType: string;
+    isLooping: boolean;
+    layer: number
+};
+
 export interface LevelData {
     spriteSheets: string[],
+    props: PropData[];
     data: number[][][];
 }
 
@@ -8,6 +18,10 @@ export const levelOne: LevelData = {
         "floor-tiles",
         "wall-tiles",
         "door-tiles",
+    ],
+    props: [
+        { name: "torch", size: [16, 16], position: { x: 105, y: 0 }, animationType: "fire", isLooping: true, layer: 1 },
+        { name: "torch", size: [16, 16], position: { x: 128, y: 0 }, animationType: "fire", isLooping: true, layer: 1 }
     ],
     // [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn]
     data: [

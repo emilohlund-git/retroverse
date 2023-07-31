@@ -36,9 +36,17 @@ export class AnimationSystem extends System {
 
       const animation = animationComponent.animations.get(animationComponent.currentAnimation);
 
+
       if (!animation) {
         continue;
       }
+
+      if (animation.name !== animationComponent.currentAnimation &&
+        animationComponent.currentAnimation !== "attack" &&
+        animationComponent.currentAnimation !== "hurt" &&
+        animationComponent.currentAnimation !== "attack" &&
+        animationComponent.currentAnimation !== "attack-up" &&
+        animationComponent.currentAnimation !== "death") animationComponent.currentFrameIndex = 0;
 
       animationComponent.currentAnimationTime += deltaTime;
       const frameDuration = 1 / animation.animationSpeed;

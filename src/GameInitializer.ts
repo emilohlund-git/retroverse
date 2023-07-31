@@ -2,10 +2,11 @@ import { Game } from "./Game";
 import { ItemComponent } from "./components/ItemComponent";
 import { GameConfig } from "./config/GameConfig";
 import { EntityManager } from "./entities/EntityManager";
+import { createPropsEntities } from "./entities/createPropsEntities";
 import { createEnemyEntity } from "./entities/enemyEntity";
 import { createPlayerEntity } from "./entities/playerEntity";
 import { LevelInitializer } from "./levels/LevelInitializer";
-import { createEntityAnimations } from "./sprites/animations/AnimationFactory";
+import { createEntityAnimations } from "./sprites/animations/animationFactory";
 import { loadItems } from "./sprites/itemFactory";
 import { AISystem } from "./systems/AISystem";
 import { AnimationSystem } from "./systems/AnimationSystem";
@@ -72,6 +73,10 @@ export class GameInitializer {
     }
   }
 
+  private async createProps(): Promise<void> {
+    createPropsEntities(this.entityManager, this.config.levels[0].props);
+  }
+
   private createWorldInventory(): void {
     const worldInventory = EntityFactory.create()
       .name("world-inventory")
@@ -86,29 +91,6 @@ export class GameInitializer {
     for (const levelData of this.config.levels) {
       await this.levelInitializer.createEntitiesFromLevelArray(levelData.data, levelData.spriteSheets);
     }
-  }
-
-  private async createProps(): Promise<void> {
-    const torchAnimations = createEntityAnimations("torch");
-    const torch = EntityFactory.create()
-      .name("torch")
-      .size(16, 16)
-      .position(new Vector2D(105, 0))
-      .animations(torchAnimations, "fire", true)
-      .prop()
-      .layer(1)
-      .build();
-
-    const torch2 = EntityFactory.create()
-      .name("torch")
-      .size(16, 16)
-      .position(new Vector2D(129, 0))
-      .animations(torchAnimations, "fire", true)
-      .prop()
-      .layer(1)
-      .build();
-
-    this.entityManager.addEntities([torch, torch2]);
   }
 
   private addSystems(): void {

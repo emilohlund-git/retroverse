@@ -69,26 +69,124 @@
     }
   };
 
-  // src/components/Component.ts
-  var Component = class {
+  // src/utils/SpriteSheetParser.ts
+  var SpriteSheetParser = class {
+    static {
+      this.spriteSheets = {};
+    }
+    static loadImage(url, imageWidth, imageHeight) {
+      return new Promise((resolve, reject) => {
+        const image = new Image(imageWidth, imageHeight);
+        image.onerror = reject;
+        image.src = url;
+        image.onload = () => resolve(image);
+      });
+    }
+    static async extractSprites(entityId, spriteSheetName, spriteWidth, spriteHeight, imageWidth, imageHeight, spriteSheetUrl) {
+      try {
+        const spriteSheetImage = await this.loadImage(spriteSheetUrl, imageWidth, imageHeight);
+        const numRows = Math.floor(spriteSheetImage.height / spriteHeight);
+        const numCols = Math.floor(spriteSheetImage.width / spriteWidth);
+        const sprites = {};
+        for (let row = 0; row < numRows; row++) {
+          sprites[row] = {};
+          for (let col = 0; col < numCols; col++) {
+            sprites[row][col] = {
+              image: spriteSheetImage,
+              x: col * spriteWidth,
+              y: row * spriteHeight,
+              width: spriteWidth,
+              height: spriteHeight
+            };
+          }
+        }
+        if (!this.spriteSheets[entityId]) {
+          this.spriteSheets[entityId] = {};
+        }
+        this.spriteSheets[entityId][spriteSheetName] = sprites;
+      } catch (error) {
+        console.error(`Error loading sprite sheet: ${spriteSheetUrl}`);
+      }
+    }
+    static getSprite(entityId, spriteSheetName, row, col) {
+      const entitySpriteSheets = this.spriteSheets[entityId];
+      if (!entitySpriteSheets)
+        return void 0;
+      const sprites = entitySpriteSheets[spriteSheetName];
+      if (!sprites)
+        return void 0;
+      return sprites[row]?.[col];
+    }
+    static getSpriteSheet(entityId, spriteSheetName) {
+      const entitySpriteSheet = this.spriteSheets[entityId];
+      if (!entitySpriteSheet)
+        return void 0;
+      const spriteSheet = entitySpriteSheet[spriteSheetName];
+      if (!spriteSheet)
+        return void 0;
+      return spriteSheet;
+    }
   };
 
-  // src/components/CollisionComponent.ts
-  var CollisionComponent = class extends Component {
-    constructor(collisionType = "box" /* BOX */, offsetX = 0, offsetY = 0, width, height) {
-      super();
-      this.collisionType = collisionType;
-      this.offsetX = offsetX;
-      this.offsetY = offsetY;
-      this.width = width;
-      this.height = height;
-      this.collisionDetails = {
-        top: false,
-        left: false,
-        right: false,
-        bottom: false
-      };
+  // src/sprites/animations/Animation.ts
+  var Animation = class {
+    constructor(name, frames, animationSpeed, loop, priority = 0) {
+      this.name = name;
+      this.frames = frames;
+      this.animationSpeed = animationSpeed;
+      this.loop = loop;
+      this.priority = priority;
     }
+  };
+
+  // src/sprites/animations/animationFactory.ts
+  function createEntityAnimations(entityId) {
+    const animations = /* @__PURE__ */ new Map();
+    switch (entityId) {
+      case "player":
+        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
+        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
+        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
+        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
+        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
+        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
+        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
+        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
+        break;
+      case "enemy":
+        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
+        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
+        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
+        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
+        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
+        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
+        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
+        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
+        break;
+      case "torch":
+        animations.set("fire", createAnimationFromSpriteSheet(entityId, "fire", 0, 8, 5e-3, true));
+        break;
+    }
+    return animations;
+  }
+  function createAnimationFromSpriteSheet(entityId, animationName, row, numFrames, frameDuration, loop) {
+    const spriteSheet = SpriteSheetParser.getSpriteSheet(entityId, animationName);
+    if (!spriteSheet) {
+      throw new Error(`Sprite sheet not found for entityId: ${entityId} and animation: ${animationName}`);
+    }
+    const frames = [];
+    for (let col = 0; col < numFrames; col++) {
+      const spriteData = spriteSheet[row][col];
+      if (!spriteData) {
+        throw new Error(`Sprite data not found for row: ${row} and col: ${col} in ${entityId}-${animationName}`);
+      }
+      frames.push(spriteData);
+    }
+    return new Animation(animationName, frames, frameDuration, loop);
+  }
+
+  // src/components/Component.ts
+  var Component = class {
   };
 
   // src/components/AIComponent.ts
@@ -128,6 +226,24 @@
       this.currentFrameIndex = 0;
       this.currentAnimationTime = 0;
       this.currentAnimation = "";
+    }
+  };
+
+  // src/components/CollisionComponent.ts
+  var CollisionComponent = class extends Component {
+    constructor(collisionType = "box" /* BOX */, offsetX = 0, offsetY = 0, width, height) {
+      super();
+      this.collisionType = collisionType;
+      this.offsetX = offsetX;
+      this.offsetY = offsetY;
+      this.width = width;
+      this.height = height;
+      this.collisionDetails = {
+        top: false,
+        left: false,
+        right: false,
+        bottom: false
+      };
     }
   };
 
@@ -411,6 +527,15 @@
     }
   };
 
+  // src/entities/createPropsEntities.ts
+  function createPropsEntities(entityManager, propsData) {
+    for (const propData of propsData) {
+      const propAnimations = createEntityAnimations(propData.name);
+      const propEntity = EntityFactory.create().name(propData.name).size(propData.size[0], propData.size[1]).position(new Vector2D(propData.position.x, propData.position.y)).animations(propAnimations, propData.animationType, propData.isLooping).prop().layer(propData.layer).build();
+      entityManager.addEntity(propEntity);
+    }
+  }
+
   // src/entities/enemyEntity.ts
   function createEnemyEntity(entityManager, name, positionX, positionY, animations, items) {
     const enemyEntity = EntityFactory.create().name(name).position(new Vector2D(positionX, positionY)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 0, 0, 16, 16).combat().ai(50).animations(animations).inventory(10, items).layer(3).build();
@@ -429,65 +554,6 @@
     const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 2, 0, 16, 16).player().combat().animations(animations).layer(2).inventory().debug(entityManager, excludedComponents).build();
     entityManager.addEntity(playerEntity);
   }
-
-  // src/utils/SpriteSheetParser.ts
-  var SpriteSheetParser = class {
-    static {
-      this.spriteSheets = {};
-    }
-    static loadImage(url, imageWidth, imageHeight) {
-      return new Promise((resolve, reject) => {
-        const image = new Image(imageWidth, imageHeight);
-        image.onerror = reject;
-        image.src = url;
-        image.onload = () => resolve(image);
-      });
-    }
-    static async extractSprites(entityId, spriteSheetName, spriteWidth, spriteHeight, imageWidth, imageHeight, spriteSheetUrl) {
-      try {
-        const spriteSheetImage = await this.loadImage(spriteSheetUrl, imageWidth, imageHeight);
-        const numRows = Math.floor(spriteSheetImage.height / spriteHeight);
-        const numCols = Math.floor(spriteSheetImage.width / spriteWidth);
-        const sprites = {};
-        for (let row = 0; row < numRows; row++) {
-          sprites[row] = {};
-          for (let col = 0; col < numCols; col++) {
-            sprites[row][col] = {
-              image: spriteSheetImage,
-              x: col * spriteWidth,
-              y: row * spriteHeight,
-              width: spriteWidth,
-              height: spriteHeight
-            };
-          }
-        }
-        if (!this.spriteSheets[entityId]) {
-          this.spriteSheets[entityId] = {};
-        }
-        this.spriteSheets[entityId][spriteSheetName] = sprites;
-      } catch (error) {
-        console.error(`Error loading sprite sheet: ${spriteSheetUrl}`);
-      }
-    }
-    static getSprite(entityId, spriteSheetName, row, col) {
-      const entitySpriteSheets = this.spriteSheets[entityId];
-      if (!entitySpriteSheets)
-        return void 0;
-      const sprites = entitySpriteSheets[spriteSheetName];
-      if (!sprites)
-        return void 0;
-      return sprites[row]?.[col];
-    }
-    static getSpriteSheet(entityId, spriteSheetName) {
-      const entitySpriteSheet = this.spriteSheets[entityId];
-      if (!entitySpriteSheet)
-        return void 0;
-      const spriteSheet = entitySpriteSheet[spriteSheetName];
-      if (!spriteSheet)
-        return void 0;
-      return spriteSheet;
-    }
-  };
 
   // src/levels/LevelInitializer.ts
   var LevelInitializer = class {
@@ -539,63 +605,6 @@
       entityFactory.interactable(conditions, interactionAction, interactionItemName);
     }
   };
-
-  // src/sprites/animations/Animation.ts
-  var Animation = class {
-    constructor(name, frames, animationSpeed, loop, priority = 0) {
-      this.name = name;
-      this.frames = frames;
-      this.animationSpeed = animationSpeed;
-      this.loop = loop;
-      this.priority = priority;
-    }
-  };
-
-  // src/sprites/animations/AnimationFactory.ts
-  function createEntityAnimations(entityId) {
-    const animations = /* @__PURE__ */ new Map();
-    switch (entityId) {
-      case "player":
-        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
-        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
-        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
-        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
-        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
-        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
-        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
-        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
-        break;
-      case "enemy":
-        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
-        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
-        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
-        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
-        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
-        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
-        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
-        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
-        break;
-      case "torch":
-        animations.set("fire", createAnimationFromSpriteSheet(entityId, "fire", 0, 8, 5e-3, true));
-        break;
-    }
-    return animations;
-  }
-  function createAnimationFromSpriteSheet(entityId, animationName, row, numFrames, frameDuration, loop) {
-    const spriteSheet = SpriteSheetParser.getSpriteSheet(entityId, animationName);
-    if (!spriteSheet) {
-      throw new Error(`Sprite sheet not found for entityId: ${entityId} and animation: ${animationName}`);
-    }
-    const frames = [];
-    for (let col = 0; col < numFrames; col++) {
-      const spriteData = spriteSheet[row][col];
-      if (!spriteData) {
-        throw new Error(`Sprite data not found for row: ${row} and col: ${col} in ${entityId}-${animationName}`);
-      }
-      frames.push(spriteData);
-    }
-    return new Animation(animationName, frames, frameDuration, loop);
-  }
 
   // src/components/ItemComponent.ts
   var ItemComponent = class extends Component {
@@ -841,6 +850,8 @@
         if (!animation) {
           continue;
         }
+        if (animation.name !== animationComponent.currentAnimation && animationComponent.currentAnimation !== "attack" && animationComponent.currentAnimation !== "hurt" && animationComponent.currentAnimation !== "attack" && animationComponent.currentAnimation !== "attack-up" && animationComponent.currentAnimation !== "death")
+          animationComponent.currentFrameIndex = 0;
         animationComponent.currentAnimationTime += deltaTime;
         const frameDuration = 1 / animation.animationSpeed;
         if (animationComponent.currentAnimationTime >= frameDuration) {
@@ -1770,6 +1781,9 @@
         createEnemyEntity(this.entityManager, `enemy${i}`, 110, 10, enemyAnimations, enemyLoot);
       }
     }
+    async createProps() {
+      createPropsEntities(this.entityManager, this.config.levels[0].props);
+    }
     createWorldInventory() {
       const worldInventory = EntityFactory.create().name("world-inventory").position(new Vector2D(0, 0)).inventory(200).build();
       this.entityManager.addEntity(worldInventory);
@@ -1778,12 +1792,6 @@
       for (const levelData of this.config.levels) {
         await this.levelInitializer.createEntitiesFromLevelArray(levelData.data, levelData.spriteSheets);
       }
-    }
-    async createProps() {
-      const torchAnimations = createEntityAnimations("torch");
-      const torch = EntityFactory.create().name("torch").size(16, 16).position(new Vector2D(105, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
-      const torch2 = EntityFactory.create().name("torch").size(16, 16).position(new Vector2D(129, 0)).animations(torchAnimations, "fire", true).prop().layer(1).build();
-      this.entityManager.addEntities([torch, torch2]);
     }
     addSystems() {
       const aiSystem = new AISystem(this.entityManager);
@@ -1815,6 +1823,10 @@
       "floor-tiles",
       "wall-tiles",
       "door-tiles"
+    ],
+    props: [
+      { name: "torch", size: [16, 16], position: { x: 105, y: 0 }, animationType: "fire", isLooping: true, layer: 1 },
+      { name: "torch", size: [16, 16], position: { x: 128, y: 0 }, animationType: "fire", isLooping: true, layer: 1 }
     ],
     // [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn]
     data: [
