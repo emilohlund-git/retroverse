@@ -46,14 +46,14 @@ export class RenderSystem extends System {
     const playerPositionComponent = playerEntity.getComponent<PositionComponent>("PositionComponent");
 
     if (playerPositionComponent) {
-      this.applyLighting(playerPositionComponent.position);
+      this.calculateLighting(playerPositionComponent.position);
       this.updateRenderingBatches(entityManager);
       this.renderEntities(playerPositionComponent.position);
       this.renderDroppedItems(playerPositionComponent.position, entityManager);
     }
   }
 
-  private updateCamera(entityManager: EntityManager) {
+  private updateCamera(_: EntityManager) {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset the transformation matrix
     this.ctx.imageSmoothingEnabled = false;
     this.ctx.scale(this.zoomFactor, this.zoomFactor);
@@ -223,26 +223,24 @@ export class RenderSystem extends System {
     this.ctx.globalAlpha = 1;
   }
 
-  private applyLighting(playerPosition: Vector2D) {
+  private calculateLighting(playerPosition: Vector2D) {
     const cameraX = playerPosition.x - this.cameraWidth / 2;
     const cameraY = playerPosition.y - this.cameraHeight / 2;
     const gradient = this.ctx.createRadialGradient(
-      playerPosition.x - cameraX, // x0: X-coordinate of the center of the gradient
-      playerPosition.y - cameraY, // y0: Y-coordinate of the center of the gradient
-      0,                          // r0: Inner radius (0 means the center, where the player is, is fully illuminated)
-      playerPosition.x - cameraX, // x1: X-coordinate of the outer circle (edge of the camera view)
-      playerPosition.y - cameraY, // y1: Y-coordinate of the outer circle (edge of the camera view)
-      this.cameraWidth / 2        // r1: Outer radius (tiles at the edge of the camera view are fully darkened)
+      playerPosition.x - cameraX,
+      playerPosition.y - cameraY,
+      0,
+      playerPosition.x - cameraX,
+      playerPosition.y - cameraY,
+      this.cameraWidth / 2
     );
-    gradient.addColorStop(0, "rgba(0, 0, 0, 0)"); // Fully transparent at the center (player position)
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)"); // Semi-transparent (adjust the alpha value to control darkness)
+    gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)");
 
-    // Apply the gradient as a global composite operation to darken the tiles
     this.ctx.globalCompositeOperation = "source-over";
     this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Reset global composite operation to the default value
     this.ctx.globalCompositeOperation = "source-over";
   }
 

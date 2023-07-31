@@ -35,7 +35,7 @@ export class GameInitializer {
 
   async initialize(): Promise<void> {
     await this.loadSprites();
-    this.createPlayer();
+    await this.createPlayer();
     await this.createEnemies();
     this.createWorldInventory();
     await this.createLevels();
@@ -58,13 +58,13 @@ export class GameInitializer {
     }
   }
 
-  private createPlayer(): void {
-    const playerAnimations = createEntityAnimations("player");
+  private async createPlayer(): Promise<void> {
+    const playerAnimations = await createEntityAnimations("player");
     createPlayerEntity(this.entityManager, playerAnimations);
   }
 
   private async createEnemies(): Promise<void> {
-    const enemyAnimations = createEntityAnimations("enemy");
+    const enemyAnimations = await createEntityAnimations("enemy");
     const items = await loadItems();
     const enemyLoot = <ItemComponent[]>[];
     enemyLoot.push(items.get("Key")!);

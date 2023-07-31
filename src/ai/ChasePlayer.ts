@@ -14,6 +14,7 @@ export class ChasePlayer implements BehaviorNode {
   playerPosition: Vector2D;
   enemyEntity: Entity;
   playerEntity: Entity;
+  private readonly minDistanceToPlayerForAttack = 10;
 
   constructor(aiPosition: Vector2D, playerPosition: Vector2D, enemyEntity: Entity, playerEntity: Entity) {
     this.aiPosition = aiPosition;
@@ -23,7 +24,7 @@ export class ChasePlayer implements BehaviorNode {
   }
 
   tick(entityManager: EntityManager): BehaviorStatus {
-    if (!this.playerEntity) {
+    if (!this.playerEntity || this.playerEntity.getComponent<CombatComponent>("CombatComponent")?.isDead) {
       return 'FAILURE';
     }
 
@@ -47,7 +48,7 @@ export class ChasePlayer implements BehaviorNode {
 
     if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent) &&
       !playerCombatComponent.isDead) {
-      if (distanceToPlayer < 10) {
+      if (distanceToPlayer < this.minDistanceToPlayerForAttack) {
         aiComponent.isChasing = false;
         if (combatComponent.attackCooldown < 1) {
           combatComponent.isAttacking = true;

@@ -67,6 +67,12 @@
       });
       return Array.from(uniqueEntities);
     }
+    removeEntity(entity) {
+      const index = this.entities.indexOf(entity);
+      if (index !== -1) {
+        this.entities.splice(index, 1);
+      }
+    }
   };
 
   // src/utils/SpriteSheetParser.ts
@@ -108,7 +114,7 @@
         console.error(`Error loading sprite sheet: ${spriteSheetUrl}`);
       }
     }
-    static getSprite(entityId, spriteSheetName, row, col) {
+    static async getSprite(entityId, spriteSheetName, row, col) {
       const entitySpriteSheets = this.spriteSheets[entityId];
       if (!entitySpriteSheets)
         return void 0;
@@ -117,7 +123,7 @@
         return void 0;
       return sprites[row]?.[col];
     }
-    static getSpriteSheet(entityId, spriteSheetName) {
+    static async getSpriteSheet(entityId, spriteSheetName) {
       const entitySpriteSheet = this.spriteSheets[entityId];
       if (!entitySpriteSheet)
         return void 0;
@@ -140,37 +146,28 @@
   };
 
   // src/sprites/animations/animationFactory.ts
-  function createEntityAnimations(entityId) {
+  async function createEntityAnimations(entityId) {
     const animations = /* @__PURE__ */ new Map();
     switch (entityId) {
       case "player":
-        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
-        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
-        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
-        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
-        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
-        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
-        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
-        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
-        break;
       case "enemy":
-        animations.set("idle", createAnimationFromSpriteSheet(entityId, "idle", 1, 8, 5e-3, true));
-        animations.set("idle-up", createAnimationFromSpriteSheet(entityId, "idle", 3, 8, 5e-3, true));
-        animations.set("run", createAnimationFromSpriteSheet(entityId, "run", 1, 4, 5e-3, true));
-        animations.set("run-up", createAnimationFromSpriteSheet(entityId, "run", 3, 4, 5e-3, true));
-        animations.set("attack", createAnimationFromSpriteSheet(entityId, "attack", 1, 4, 0.01, false));
-        animations.set("attack-up", createAnimationFromSpriteSheet(entityId, "attack", 3, 4, 0.01, false));
-        animations.set("hurt", createAnimationFromSpriteSheet(entityId, "hurt", 1, 4, 0.01, false));
-        animations.set("death", createAnimationFromSpriteSheet(entityId, "die", 0, 12, 0.01, false));
+        animations.set("idle", await createAnimationFromSpriteSheet(entityId, "idle", "idle", 1, 8, 5e-3, true));
+        animations.set("idle-up", await createAnimationFromSpriteSheet(entityId, "idle", "idle-up", 3, 8, 5e-3, true));
+        animations.set("run", await createAnimationFromSpriteSheet(entityId, "run", "run", 1, 4, 5e-3, true));
+        animations.set("run-up", await createAnimationFromSpriteSheet(entityId, "run", "run-up", 3, 4, 5e-3, true));
+        animations.set("attack", await createAnimationFromSpriteSheet(entityId, "attack", "attack", 1, 4, 0.01, false));
+        animations.set("attack-up", await createAnimationFromSpriteSheet(entityId, "attack", "attack-up", 3, 4, 0.01, false));
+        animations.set("hurt", await createAnimationFromSpriteSheet(entityId, "hurt", "hurt", 1, 4, 0.01, false));
+        animations.set("death", await createAnimationFromSpriteSheet(entityId, "death", "death", 0, 12, 0.01, false));
         break;
       case "torch":
-        animations.set("fire", createAnimationFromSpriteSheet(entityId, "fire", 0, 8, 5e-3, true));
+        animations.set("fire", await createAnimationFromSpriteSheet(entityId, "fire", "fire", 0, 8, 5e-3, true));
         break;
     }
     return animations;
   }
-  function createAnimationFromSpriteSheet(entityId, animationName, row, numFrames, frameDuration, loop) {
-    const spriteSheet = SpriteSheetParser.getSpriteSheet(entityId, animationName);
+  async function createAnimationFromSpriteSheet(entityId, spriteSheetName, animationName, row, numFrames, frameDuration, loop) {
+    const spriteSheet = await SpriteSheetParser.getSpriteSheet(entityId, spriteSheetName);
     if (!spriteSheet) {
       throw new Error(`Sprite sheet not found for entityId: ${entityId} and animation: ${animationName}`);
     }
@@ -419,6 +416,9 @@
     removeComponent(componentName) {
       this.components.delete(componentName);
     }
+    removeComponents() {
+      this.components.clear();
+    }
   };
 
   // src/utils/EntityFactory.ts
@@ -528,9 +528,9 @@
   };
 
   // src/entities/createPropsEntities.ts
-  function createPropsEntities(entityManager, propsData) {
+  async function createPropsEntities(entityManager, propsData) {
     for (const propData of propsData) {
-      const propAnimations = createEntityAnimations(propData.name);
+      const propAnimations = await createEntityAnimations(propData.name);
       const propEntity = EntityFactory.create().name(propData.name).size(propData.size[0], propData.size[1]).position(new Vector2D(propData.position.x, propData.position.y)).animations(propAnimations, propData.animationType, propData.isLooping).prop().layer(propData.layer).build();
       entityManager.addEntity(propEntity);
     }
@@ -558,6 +558,8 @@
   // src/levels/LevelInitializer.ts
   var LevelInitializer = class {
     constructor(entityManager) {
+      this.tileWidth = 8;
+      this.tileHeight = 8;
       this.entityManager = entityManager;
     }
     async createEntitiesFromLevelArray(levelData, spriteSheets) {
@@ -566,7 +568,7 @@
         for (let j = 0; j < levelData[i].length; j++) {
           const [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
           const spriteSheet = spriteSheets[spriteSheetIndex];
-          const spriteData = SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn);
+          const spriteData = await SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn);
           if (spriteData) {
             const tileEntity = this.createTileEntity(i, j, spriteData, layer, hasCollision);
             if (interactable === 1) {
@@ -579,14 +581,15 @@
       this.entityManager.addEntities(entitiesToAdd);
     }
     createTileEntity(i, j, spriteData, layer, hasCollision) {
-      const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(layer).solid(spriteData).tiled(true);
+      const tileEntity = EntityFactory.create().position(new Vector2D(i * this.tileWidth, j * this.tileHeight)).size(this.tileWidth, this.tileHeight).layer(layer).solid(spriteData).tiled(true);
       if (hasCollision === 1) {
         tileEntity.collision("box" /* BOX */, -2, -2, 0, 0);
       }
       return tileEntity;
     }
     addInteractableComponent(entityFactory, interactionItemName) {
-      const interactionAction = (inventory, interactable, interactableEntity) => {
+      const interactionAction = (args) => {
+        const { inventory, interactable, interactableEntity } = args;
         const itemToRemove = inventory.items.find((i) => i.name === interactable.interactionItemName);
         if (itemToRemove && interactable.interactionItemName) {
           inventory.removeItem(itemToRemove);
@@ -630,13 +633,11 @@
     ];
     const itemComponents = /* @__PURE__ */ new Map();
     for (const itemData of items) {
-      const spriteData = SpriteSheetParser.getSprite("items", "all-items", itemData.row, itemData.col);
-      if (spriteData) {
-        const itemComponent = new ItemComponent(itemData.name, itemData.description, spriteData);
-        itemComponents.set(itemData.name, itemComponent);
-      } else {
+      const spriteData = await SpriteSheetParser.getSprite("items", "all-items", itemData.row, itemData.col);
+      if (!spriteData)
         throw new Error(`Sprite data not found for item: ${itemData.name}`);
-      }
+      const itemComponent = new ItemComponent(itemData.name, itemData.description, spriteData);
+      itemComponents.set(itemData.name, itemComponent);
     }
     return itemComponents;
   }
@@ -664,13 +665,14 @@
   // src/ai/ChasePlayer.ts
   var ChasePlayer = class {
     constructor(aiPosition, playerPosition, enemyEntity, playerEntity) {
+      this.minDistanceToPlayerForAttack = 10;
       this.aiPosition = aiPosition;
       this.playerPosition = playerPosition;
       this.enemyEntity = enemyEntity;
       this.playerEntity = playerEntity;
     }
     tick(entityManager) {
-      if (!this.playerEntity) {
+      if (!this.playerEntity || this.playerEntity.getComponent("CombatComponent")?.isDead) {
         return "FAILURE";
       }
       const playerPositionComponent = this.playerEntity.getComponent("PositionComponent");
@@ -695,7 +697,7 @@
       const directionY = playerPositionComponent.position.y - positionComponent.position.y;
       const distanceToPlayer = Math.sqrt(directionX * directionX + directionY * directionY);
       if (distanceToPlayer <= aiComponent.aggroRange && this.hasLineOfSight(entityManager, positionComponent, playerPositionComponent, aiComponent) && !playerCombatComponent.isDead) {
-        if (distanceToPlayer < 10) {
+        if (distanceToPlayer < this.minDistanceToPlayerForAttack) {
           aiComponent.isChasing = false;
           if (combatComponent.attackCooldown < 1) {
             combatComponent.isAttacking = true;
@@ -779,6 +781,9 @@
 
   // src/systems/System.ts
   var System = class {
+    onEntityRemoved(entity) {
+      entity.removeComponents();
+    }
   };
 
   // src/systems/AISystem.ts
@@ -791,21 +796,19 @@
       const playerEntity = entityManager.getEntitiesByComponent("PlayerComponent")[0];
       for (const enemyEntity of aiEntities) {
         const positionComponent = enemyEntity.getComponent("PositionComponent");
-        if (!positionComponent)
-          continue;
         const playerPositionComponent = playerEntity.getComponent("PositionComponent");
-        if (!playerPositionComponent)
-          continue;
-        const behaviorTree = this.createBehaviorTree(positionComponent.position, playerPositionComponent.position, enemyEntity, playerEntity);
-        this.behaviorTrees.set(enemyEntity.name, behaviorTree);
+        if (playerPositionComponent && positionComponent) {
+          const behaviorTree = this.createBehaviorTree(positionComponent.position, playerPositionComponent.position, enemyEntity, playerEntity);
+          this.behaviorTrees.set(enemyEntity.name, behaviorTree);
+        }
       }
     }
     preload() {
     }
     update(_, entityManager) {
-      this.behaviorTrees.forEach((behaviorTree, _2) => {
+      for (const behaviorTree of this.behaviorTrees.values()) {
         behaviorTree.tick(entityManager);
-      });
+      }
     }
     render() {
     }
@@ -845,13 +848,16 @@
         if (!animationComponent.isPlaying || !renderComponent || !animationComponent.currentAnimation) {
           continue;
         }
-        animationComponent.state = 0 /* Playing */;
         const animation = animationComponent.animations.get(animationComponent.currentAnimation);
         if (!animation) {
           continue;
         }
-        if (animation.name !== animationComponent.currentAnimation && animationComponent.currentAnimation !== "attack" && animationComponent.currentAnimation !== "hurt" && animationComponent.currentAnimation !== "attack" && animationComponent.currentAnimation !== "attack-up" && animationComponent.currentAnimation !== "death")
+        if (animation.name !== animationComponent.currentAnimation) {
           animationComponent.currentFrameIndex = 0;
+          animationComponent.currentAnimationTime = 0;
+          animationComponent.state = 0 /* Playing */;
+          animationComponent.currentAnimation = animation.name;
+        }
         animationComponent.currentAnimationTime += deltaTime;
         const frameDuration = 1 / animation.animationSpeed;
         if (animationComponent.currentAnimationTime >= frameDuration) {
@@ -869,6 +875,10 @@
                 if (combatComponent) {
                   combatComponent.isAttacking = false;
                 }
+              }
+              if (animationComponent.currentAnimation === "death") {
+                this.onEntityRemoved(entity);
+                entityManager.removeEntity(entity);
               }
               continue;
             }
@@ -1125,13 +1135,8 @@
               worldInventory.addItem(item);
             }
             if (targetAnimationComponent) {
-              targetAnimationComponent.currentFrameIndex = 0;
               targetAnimationComponent.playAnimation("death");
             }
-            target.removeComponent("InventoryComponent");
-            target.removeComponent("AIComponent");
-            target.removeComponent("MovementComponent");
-            target.removeComponent("CombatComponent");
           }
         }
       }
@@ -1142,7 +1147,7 @@
   var InputSystem = class extends System {
     constructor() {
       super();
-      this.pressedKeys = /* @__PURE__ */ new Set();
+      this.keys = {};
       window.addEventListener("keydown", this.handleKeyDown.bind(this));
       window.addEventListener("keyup", this.handleKeyUp.bind(this));
       window.addEventListener("blur", this.handleBlur.bind(this));
@@ -1152,69 +1157,50 @@
     update(deltaTime, entityManager) {
       const interactableEntities = entityManager.getEntitiesByComponent("InteractableComponent");
       const player = entityManager.getEntitiesByComponent("PlayerComponent")[0];
-      const movementComponent = player.getComponent("MovementComponent");
-      if (!movementComponent)
-        return;
-      const combatComponent = player.getComponent("CombatComponent");
-      if (!combatComponent)
-        return;
-      const animationComponent = player.getComponent("AnimationComponent");
-      if (!animationComponent)
-        return;
-      const positionComponent = player.getComponent("PositionComponent");
-      if (!positionComponent)
-        return;
-      const inventoryComponent = player.getComponent("InventoryComponent");
       if (!player)
-        throw new Error("No player entity assigned.");
-      if (!movementComponent)
-        throw new Error("Player has no movement component.");
-      let xDirection = 0;
-      let yDirection = 0;
-      if (!combatComponent.isAttacking) {
-        if (this.pressedKeys.has("A")) {
-          xDirection = 1;
-        }
-        if (this.pressedKeys.has("D")) {
-          xDirection = -1;
-        }
-        if (this.pressedKeys.has("S")) {
-          yDirection = 1;
-        }
-        if (this.pressedKeys.has("W")) {
-          yDirection = -1;
-        }
-      }
+        return;
+      const movementComponent = player.getComponent("MovementComponent");
+      const combatComponent = player.getComponent("CombatComponent");
+      const animationComponent = player.getComponent("AnimationComponent");
+      const positionComponent = player.getComponent("PositionComponent");
+      const inventoryComponent = player.getComponent("InventoryComponent");
+      if (!movementComponent || !combatComponent || !animationComponent || !positionComponent)
+        return;
+      const { keys } = this;
+      const isAttacking = keys[" "];
+      const isMovingLeft = keys["A"] || keys["ArrowLeft"];
+      const isMovingRight = keys["D"] || keys["ArrowRight"];
+      const isMovingUp = keys["W"] || keys["ArrowUp"];
+      const isMovingDown = keys["S"] || keys["ArrowDown"];
+      const xDirection = (isMovingLeft ? -1 : 0) + (isMovingRight ? 1 : 0);
+      const yDirection = (isMovingUp ? -1 : 0) + (isMovingDown ? 1 : 0);
       if (inventoryComponent) {
-        if (this.pressedKeys.has("E")) {
+        inventoryComponent.pickingUp = keys["E"];
+        if (keys["E"]) {
           this.checkInteractions(interactableEntities, positionComponent.position);
-          inventoryComponent.pickingUp = true;
-        } else {
-          inventoryComponent.pickingUp = false;
         }
       }
-      if (combatComponent) {
-        if (this.pressedKeys.has(" ") && !combatComponent.attackInitiated && combatComponent.attackCooldown < 1) {
+      if (!combatComponent.isAttacking) {
+        if (isAttacking && combatComponent.attackCooldown < 1) {
           animationComponent.currentFrameIndex = 0;
-          combatComponent.attackInitiated = true;
           combatComponent.isAttacking = true;
-        } else if (!this.pressedKeys.has(" ")) {
-          combatComponent.attackInitiated = false;
         }
+      } else if (!isAttacking) {
+        combatComponent.isAttacking = false;
       }
-      movementComponent.direction.x = xDirection;
+      movementComponent.direction.x = -xDirection;
       movementComponent.direction.y = yDirection;
     }
     render() {
     }
     handleKeyDown(e) {
-      this.pressedKeys.add(e.key.toUpperCase());
+      this.keys[e.key.toUpperCase()] = true;
     }
     handleKeyUp(e) {
-      this.pressedKeys.delete(e.key.toUpperCase());
+      this.keys[e.key.toUpperCase()] = false;
     }
     handleBlur() {
-      this.pressedKeys.clear();
+      this.keys = {};
     }
     checkInteractions(interactableEntities, playerPosition) {
       interactableEntities.forEach((i) => {
@@ -1237,7 +1223,7 @@
     }
     preload() {
     }
-    update(deltaTime, entityManager) {
+    update(_, entityManager) {
       const player = entityManager.getEntityByName("player");
       if (!player)
         throw new Error("Player not instantiated.");
@@ -1250,8 +1236,12 @@
         if (!interactableComponent)
           continue;
         if (interactableComponent.interacting) {
-          if (this.areConditionsSatisfied(entity, interactableComponent, playerInventory)) {
-            interactableComponent.interactionAction(playerInventory, interactableComponent, entity);
+          if (this.areConditionsSatisfied(interactableComponent, playerInventory)) {
+            interactableComponent.interactionAction({
+              inventory: playerInventory,
+              interactableEntity: entity,
+              interactable: interactableComponent
+            });
             interactableComponent.interacting = false;
           }
         }
@@ -1259,11 +1249,9 @@
     }
     render() {
     }
-    areConditionsSatisfied(interactableEntity, interactable, inventory) {
+    areConditionsSatisfied(interactable, inventory) {
       for (const condition of interactable.conditions) {
-        if (condition.hasItem) {
-          if (!interactable.interactionItemName)
-            continue;
+        if (condition.hasItem && interactable.interactionItemName) {
           const conditionSatisfied = condition.hasItem(inventory, interactable.interactionItemName);
           if (!conditionSatisfied) {
             return false;
@@ -1284,8 +1272,6 @@
       this.slotHeight = 16;
       this.slotSpacing = 2;
       this.numSlotsPerRow = 10;
-      this.hoveredItemIndex = null;
-      this.tooltip = null;
       this.canvas.id = "inventory-canvas";
       const viewport = document.getElementById("viewport");
       if (!viewport)
@@ -1295,12 +1281,10 @@
         throw new Error("Error initializing inventory context.");
       this.ctx = context;
       viewport.appendChild(this.canvas);
-      this.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
-      this.canvas.addEventListener("mouseleave", this.handleMouseLeave.bind(this));
     }
-    preload(entityManager) {
+    preload() {
     }
-    update(deltaTime, entityManager) {
+    update(_, entityManager) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       const player = entityManager.getEntitiesByComponent("PlayerComponent")[0];
       const playerPosition = player.getComponent("PositionComponent")?.position;
@@ -1316,7 +1300,6 @@
     render() {
     }
     updatePlayerInventory(inventory) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       for (let i = 0; i < inventory.maxCapacity; i++) {
         if (inventory.items[i]) {
           this.cropIconFromSpriteSheet(inventory.items[i].icon, i);
@@ -1324,9 +1307,8 @@
       }
     }
     cropIconFromSpriteSheet(spriteData, slotIndex) {
-      const numSlotsPerRow = 10;
-      const x = slotIndex % numSlotsPerRow * (this.slotWidth + this.slotSpacing);
-      const y = Math.floor(slotIndex / numSlotsPerRow) * (this.slotHeight + this.slotSpacing);
+      const x = slotIndex % this.numSlotsPerRow * (this.slotWidth + this.slotSpacing);
+      const y = Math.floor(slotIndex / this.numSlotsPerRow) * (this.slotHeight + this.slotSpacing);
       this.ctx.fillStyle = "#888";
       this.ctx.fillRect(x, y, this.slotWidth, this.slotHeight);
       this.ctx.drawImage(
@@ -1340,27 +1322,6 @@
         this.slotWidth,
         this.slotHeight
       );
-    }
-    handleMouseMove(event) {
-      if (!this.playerInventory)
-        return;
-      const rect = this.canvas.getBoundingClientRect();
-      const mouseX = event.clientX - rect.left;
-      const mouseY = event.clientY - rect.top;
-      const numSlotsPerRow = 10;
-      const hoveredSlotIndex = Math.floor(mouseY / (this.slotHeight + this.slotHeight * 3 + this.slotSpacing)) * numSlotsPerRow + Math.floor(mouseX / (this.slotWidth + this.slotWidth * 3 + this.slotSpacing));
-      if (hoveredSlotIndex >= 0 && hoveredSlotIndex < this.playerInventory.maxCapacity) {
-        this.hoveredItemIndex = hoveredSlotIndex;
-      } else {
-        this.hoveredItemIndex = null;
-      }
-      this.updatePlayerInventory(this.playerInventory);
-    }
-    handleMouseLeave() {
-      if (!this.playerInventory)
-        return;
-      this.hoveredItemIndex = null;
-      this.updatePlayerInventory(this.playerInventory);
     }
     addToPlayerInventory(item) {
       this.playerInventory?.items.push(item);
@@ -1405,7 +1366,7 @@
         {
           name: "run-up",
           condition: (params) => params.yDirection < 0,
-          priority: 1
+          priority: 0
         },
         {
           name: "idle-up",
@@ -1419,18 +1380,18 @@
         },
         {
           name: "attack",
-          condition: (params) => params.isAttacking && params.currentFacingAngle >= 0,
+          condition: (params) => params.isAttacking || params.attackInitiated && params.currentFacingAngle >= 0,
           priority: 5
         },
         {
           name: "attack-up",
-          condition: (params) => params.isAttacking && params.currentFacingAngle < 0,
+          condition: (params) => params.isAttacking || params.attackInitiated && params.currentFacingAngle < 0,
           priority: 5
         },
         {
           name: "hurt",
           condition: (params) => params.isHurt,
-          priority: 10
+          priority: 4
         }
         // Add more animation conditions as needed
       ];
@@ -1441,18 +1402,13 @@
         yDirection: movementComponent.direction.y,
         currentFacingAngle: movementComponent.currentFacingAngle,
         isAttacking: combatComponent.isAttacking,
+        attackInitiated: combatComponent.attackInitiated,
         animationState: animationComponent.state,
         isHurt: combatComponent.isHurt,
         attackCooldown: combatComponent.attackCooldown
       };
-      let highestPriorityCondition = null;
-      for (const condition of this.conditions) {
-        if (condition.condition(params)) {
-          if (!highestPriorityCondition || condition.priority > highestPriorityCondition.priority) {
-            highestPriorityCondition = condition;
-          }
-        }
-      }
+      const sortedConditions = this.conditions.filter((condition) => condition.condition(params)).sort((a, b) => b.priority - a.priority);
+      const highestPriorityCondition = sortedConditions[0];
       if (highestPriorityCondition) {
         animationComponent.playAnimation(highestPriorityCondition.name);
       } else {
@@ -1477,12 +1433,12 @@
         const positionComponent = entity.getComponent("PositionComponent");
         if (!positionComponent)
           continue;
-        const collisionComponent = entity.getComponent("CollisionComponent");
-        const animationComponent = entity.getComponent("AnimationComponent");
         const renderComponent = entity.getComponent("RenderComponent");
         if (!renderComponent)
           continue;
+        const animationComponent = entity.getComponent("AnimationComponent");
         const combatComponent = entity.getComponent("CombatComponent");
+        const collisionComponent = entity.getComponent("CollisionComponent");
         let xMovement = movementComponent.direction.x * movementComponent.moveSpeed;
         let yMovement = movementComponent.direction.y * movementComponent.moveSpeed;
         if (combatComponent && !combatComponent.isDead) {
@@ -1551,13 +1507,13 @@
         return;
       const playerPositionComponent = playerEntity.getComponent("PositionComponent");
       if (playerPositionComponent) {
-        this.applyLighting(playerPositionComponent.position);
+        this.calculateLighting(playerPositionComponent.position);
         this.updateRenderingBatches(entityManager);
         this.renderEntities(playerPositionComponent.position);
         this.renderDroppedItems(playerPositionComponent.position, entityManager);
       }
     }
-    updateCamera(entityManager) {
+    updateCamera(_) {
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.scale(this.zoomFactor, this.zoomFactor);
@@ -1702,22 +1658,16 @@
       );
       this.ctx.globalAlpha = 1;
     }
-    applyLighting(playerPosition) {
+    calculateLighting(playerPosition) {
       const cameraX = playerPosition.x - this.cameraWidth / 2;
       const cameraY = playerPosition.y - this.cameraHeight / 2;
       const gradient = this.ctx.createRadialGradient(
         playerPosition.x - cameraX,
-        // x0: X-coordinate of the center of the gradient
         playerPosition.y - cameraY,
-        // y0: Y-coordinate of the center of the gradient
         0,
-        // r0: Inner radius (0 means the center, where the player is, is fully illuminated)
         playerPosition.x - cameraX,
-        // x1: X-coordinate of the outer circle (edge of the camera view)
         playerPosition.y - cameraY,
-        // y1: Y-coordinate of the outer circle (edge of the camera view)
         this.cameraWidth / 2
-        // r1: Outer radius (tiles at the edge of the camera view are fully darkened)
       );
       gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
       gradient.addColorStop(1, "rgba(0, 0, 0, 0.5)");
@@ -1747,7 +1697,7 @@
     }
     async initialize() {
       await this.loadSprites();
-      this.createPlayer();
+      await this.createPlayer();
       await this.createEnemies();
       this.createWorldInventory();
       await this.createLevels();
@@ -1768,12 +1718,12 @@
         );
       }
     }
-    createPlayer() {
-      const playerAnimations = createEntityAnimations("player");
+    async createPlayer() {
+      const playerAnimations = await createEntityAnimations("player");
       createPlayerEntity(this.entityManager, playerAnimations);
     }
     async createEnemies() {
-      const enemyAnimations = createEntityAnimations("enemy");
+      const enemyAnimations = await createEntityAnimations("enemy");
       const items = await loadItems();
       const enemyLoot = [];
       enemyLoot.push(items.get("Key"));
@@ -1919,7 +1869,7 @@
       },
       {
         entityId: "enemy",
-        spriteSheetName: "die",
+        spriteSheetName: "death",
         spriteWidth: 32,
         spriteHeight: 32,
         imageWidth: 384,
@@ -1964,7 +1914,7 @@
       },
       {
         entityId: "player",
-        spriteSheetName: "die",
+        spriteSheetName: "death",
         spriteWidth: 32,
         spriteHeight: 32,
         imageWidth: 384,

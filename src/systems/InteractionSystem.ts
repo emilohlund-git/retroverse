@@ -1,6 +1,5 @@
 import { InteractableComponent } from "../components/InteractableComponent";
 import { InventoryComponent } from "../components/InventoryComponent";
-import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
 import { System } from "./System";
 
@@ -13,7 +12,7 @@ export class InteractionSystem extends System {
     // Load any assets or setup needed for interactions
   }
 
-  update(deltaTime: number, entityManager: EntityManager) {
+  update(_: number, entityManager: EntityManager) {
     const player = entityManager.getEntityByName("player");
     if (!player) throw new Error("Player not instantiated.");
     const playerInventory = player.getComponent<InventoryComponent>("InventoryComponent");
@@ -26,8 +25,12 @@ export class InteractionSystem extends System {
       if (!interactableComponent) continue;
 
       if (interactableComponent.interacting) {
-        if (this.areConditionsSatisfied(entity, interactableComponent, playerInventory)) {
-          interactableComponent.interactionAction(playerInventory, interactableComponent, entity);
+        if (this.areConditionsSatisfied(interactableComponent, playerInventory)) {
+          interactableComponent.interactionAction({
+            inventory: playerInventory,
+            interactableEntity: entity,
+            interactable: interactableComponent,
+          });
           interactableComponent.interacting = false;
         }
       }
@@ -38,19 +41,15 @@ export class InteractionSystem extends System {
     // Implement any rendering related to interactions if needed
   }
 
-  private areConditionsSatisfied(interactableEntity: Entity, interactable: InteractableComponent, inventory: InventoryComponent): boolean {
+  private areConditionsSatisfied(interactable: InteractableComponent, inventory: InventoryComponent): boolean {
     for (const condition of interactable.conditions) {
-      if (condition.hasItem) {
-        if (!interactable.interactionItemName) continue;
-
+      if (condition.hasItem && interactable.interactionItemName) {
         const conditionSatisfied = condition.hasItem(inventory, interactable.interactionItemName);
-
         if (!conditionSatisfied) {
           return false;
         }
       }
     }
-
     return true;
   }
 }

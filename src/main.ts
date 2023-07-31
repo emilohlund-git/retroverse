@@ -60,7 +60,7 @@ const gameConfig: GameConfig = {
     },
     {
       entityId: "enemy",
-      spriteSheetName: "die",
+      spriteSheetName: "death",
       spriteWidth: 32,
       spriteHeight: 32,
       imageWidth: 384,
@@ -105,7 +105,7 @@ const gameConfig: GameConfig = {
     },
     {
       entityId: "player",
-      spriteSheetName: "die",
+      spriteSheetName: "death",
       spriteWidth: 32,
       spriteHeight: 32,
       imageWidth: 384,

@@ -4,9 +4,9 @@ import { EntityFactory } from "../utils/EntityFactory";
 import { Vector2D } from "../utils/Vector2D";
 import { EntityManager } from "./EntityManager";
 
-export function createPropsEntities(entityManager: EntityManager, propsData: PropData[]) {
+export async function createPropsEntities(entityManager: EntityManager, propsData: PropData[]) {
   for (const propData of propsData) {
-    const propAnimations = createEntityAnimations(propData.name);
+    const propAnimations = await createEntityAnimations(propData.name);
     const propEntity = EntityFactory.create()
       .name(propData.name)
       .size(propData.size[0], propData.size[1])

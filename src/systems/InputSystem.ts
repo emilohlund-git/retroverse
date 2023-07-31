@@ -12,14 +12,14 @@ import { calculateDistance } from "../utils/math";
 import { System } from "./System";
 
 export class InputSystem extends System {
-  private pressedKeys: Set<string> = new Set();
+  private keys: { [key: string]: boolean } = {};
 
   constructor() {
     super();
 
-    window.addEventListener('keydown', this.handleKeyDown.bind(this));
-    window.addEventListener('keyup', this.handleKeyUp.bind(this));
-    window.addEventListener('blur', this.handleBlur.bind(this));
+    window.addEventListener("keydown", this.handleKeyDown.bind(this));
+    window.addEventListener("keyup", this.handleKeyUp.bind(this));
+    window.addEventListener("blur", this.handleBlur.bind(this));
   }
 
   preload() { }
@@ -27,73 +27,61 @@ export class InputSystem extends System {
   update(deltaTime: number, entityManager: EntityManager) {
     const interactableEntities = entityManager.getEntitiesByComponent("InteractableComponent");
     const player = entityManager.getEntitiesByComponent("PlayerComponent")[0];
+    if (!player) return;
     const movementComponent = player.getComponent<MovementComponent>("MovementComponent");
-    if (!movementComponent) return;
     const combatComponent = player.getComponent<CombatComponent>("CombatComponent");
-    if (!combatComponent) return;
     const animationComponent = player.getComponent<AnimationComponent>("AnimationComponent");
-    if (!animationComponent) return;
     const positionComponent = player.getComponent<PositionComponent>("PositionComponent");
-    if (!positionComponent) return;
     const inventoryComponent = player.getComponent<InventoryComponent>("InventoryComponent");
 
-    if (!player) throw new Error('No player entity assigned.');
-    if (!movementComponent) throw new Error('Player has no movement component.');
+    if (!movementComponent || !combatComponent || !animationComponent || !positionComponent) return;
 
-    let xDirection = 0;
-    let yDirection = 0;
+    const { keys } = this;
+    const isAttacking = keys[" "];
+    const isMovingLeft = keys["A"] || keys["ArrowLeft"];
+    const isMovingRight = keys["D"] || keys["ArrowRight"];
+    const isMovingUp = keys["W"] || keys["ArrowUp"];
+    const isMovingDown = keys["S"] || keys["ArrowDown"];
 
-    if (!combatComponent.isAttacking) {
-      if (this.pressedKeys.has('A')) {
-        xDirection = 1
-      }
-      if (this.pressedKeys.has('D')) {
-        xDirection = -1;
-      }
-      if (this.pressedKeys.has('S')) {
-        yDirection = 1;
-      }
-      if (this.pressedKeys.has('W')) {
-        yDirection = -1;
-      }
-    }
+    // Handle movement
+    const xDirection = (isMovingLeft ? -1 : 0) + (isMovingRight ? 1 : 0);
+    const yDirection = (isMovingUp ? -1 : 0) + (isMovingDown ? 1 : 0);
 
     // Checking for inventory & possible world interactions
     if (inventoryComponent) {
-      if (this.pressedKeys.has("E")) {
+      inventoryComponent.pickingUp = keys["E"];
+      if (keys["E"]) {
         this.checkInteractions(interactableEntities, positionComponent.position);
-        inventoryComponent.pickingUp = true;
-      } else {
-        inventoryComponent.pickingUp = false;
       }
     }
 
-    if (combatComponent) {
-      if (this.pressedKeys.has(' ') && !combatComponent.attackInitiated && combatComponent.attackCooldown < 1) {
+    // Handle combat
+    if (!combatComponent.isAttacking) {
+      if (isAttacking && combatComponent.attackCooldown < 1) {
         animationComponent.currentFrameIndex = 0;
-        combatComponent.attackInitiated = true;
         combatComponent.isAttacking = true;
-      } else if (!this.pressedKeys.has(" ")) {
-        combatComponent.attackInitiated = false;
       }
+    } else if (!isAttacking) {
+      combatComponent.isAttacking = false;
     }
 
-    movementComponent.direction.x = xDirection;
+    // Set movement direction
+    movementComponent.direction.x = -xDirection;
     movementComponent.direction.y = yDirection;
   }
 
   render() { }
 
   private handleKeyDown(e: KeyboardEvent) {
-    this.pressedKeys.add(e.key.toUpperCase());
+    this.keys[e.key.toUpperCase()] = true;
   }
 
   private handleKeyUp(e: KeyboardEvent) {
-    this.pressedKeys.delete(e.key.toUpperCase());
+    this.keys[e.key.toUpperCase()] = false;
   }
 
   private handleBlur() {
-    this.pressedKeys.clear();
+    this.keys = {};
   }
 
   private checkInteractions(interactableEntities: Entity[], playerPosition: Vector2D) {

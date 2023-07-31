@@ -22,11 +22,11 @@ export class MovementSystem extends System {
       if (!movementComponent) continue;
       const positionComponent = entity.getComponent<PositionComponent>("PositionComponent");
       if (!positionComponent) continue;
-      const collisionComponent = entity.getComponent<CollisionComponent>("CollisionComponent");
-      const animationComponent = entity.getComponent<AnimationComponent>("AnimationComponent");
       const renderComponent = entity.getComponent<RenderComponent>("RenderComponent");
       if (!renderComponent) continue;
+      const animationComponent = entity.getComponent<AnimationComponent>("AnimationComponent");
       const combatComponent = entity.getComponent<CombatComponent>("CombatComponent");
+      const collisionComponent = entity.getComponent<CollisionComponent>("CollisionComponent");
 
       // Calculate x and y movement separately
       let xMovement = movementComponent.direction.x * movementComponent.moveSpeed;

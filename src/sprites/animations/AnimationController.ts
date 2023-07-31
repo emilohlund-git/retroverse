@@ -13,6 +13,7 @@ interface AnimationParams {
   yDirection: number;
   currentFacingAngle: number;
   isAttacking: boolean;
+  attackInitiated: boolean;
   animationState: AnimationState;
   isHurt: boolean;
   attackCooldown: number;
@@ -28,7 +29,7 @@ export class AnimationController {
     {
       name: "run-up",
       condition: (params) => params.yDirection < 0,
-      priority: 1,
+      priority: 0,
     },
     {
       name: "idle-up",
@@ -42,18 +43,18 @@ export class AnimationController {
     },
     {
       name: "attack",
-      condition: (params) => params.isAttacking && params.currentFacingAngle >= 0,
+      condition: (params) => params.isAttacking || params.attackInitiated && params.currentFacingAngle >= 0,
       priority: 5,
     },
     {
       name: "attack-up",
-      condition: (params) => params.isAttacking && params.currentFacingAngle < 0,
+      condition: (params) => params.isAttacking || params.attackInitiated && params.currentFacingAngle < 0,
       priority: 5,
     },
     {
       name: "hurt",
       condition: (params) => params.isHurt,
-      priority: 10
+      priority: 4
     }
     // Add more animation conditions as needed
   ];
@@ -64,19 +65,17 @@ export class AnimationController {
       yDirection: movementComponent.direction.y,
       currentFacingAngle: movementComponent.currentFacingAngle,
       isAttacking: combatComponent.isAttacking,
+      attackInitiated: combatComponent.attackInitiated,
       animationState: animationComponent.state,
       isHurt: combatComponent.isHurt,
       attackCooldown: combatComponent.attackCooldown,
     };
 
-    let highestPriorityCondition: AnimationCondition | null = null;
-    for (const condition of this.conditions) {
-      if (condition.condition(params)) {
-        if (!highestPriorityCondition || condition.priority > highestPriorityCondition.priority) {
-          highestPriorityCondition = condition;
-        }
-      }
-    }
+    const sortedConditions = this.conditions
+      .filter((condition) => condition.condition(params))
+      .sort((a, b) => b.priority - a.priority);
+
+    const highestPriorityCondition = sortedConditions[0];
 
     if (highestPriorityCondition) {
       animationComponent.playAnimation(highestPriorityCondition.name);

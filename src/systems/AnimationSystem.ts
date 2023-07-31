@@ -32,21 +32,18 @@ export class AnimationSystem extends System {
         continue;
       }
 
-      animationComponent.state = AnimationState.Playing;
-
       const animation = animationComponent.animations.get(animationComponent.currentAnimation);
-
 
       if (!animation) {
         continue;
       }
 
-      if (animation.name !== animationComponent.currentAnimation &&
-        animationComponent.currentAnimation !== "attack" &&
-        animationComponent.currentAnimation !== "hurt" &&
-        animationComponent.currentAnimation !== "attack" &&
-        animationComponent.currentAnimation !== "attack-up" &&
-        animationComponent.currentAnimation !== "death") animationComponent.currentFrameIndex = 0;
+      if (animation.name !== animationComponent.currentAnimation) {
+        animationComponent.currentFrameIndex = 0; // Reset the current frame index
+        animationComponent.currentAnimationTime = 0; // Reset the animation time
+        animationComponent.state = AnimationState.Playing; // Start playing the new animation
+        animationComponent.currentAnimation = animation.name; // Update the current animation
+      }
 
       animationComponent.currentAnimationTime += deltaTime;
       const frameDuration = 1 / animation.animationSpeed;
@@ -70,6 +67,11 @@ export class AnimationSystem extends System {
               if (combatComponent) {
                 combatComponent.isAttacking = false;
               }
+            }
+
+            if (animationComponent.currentAnimation === "death") {
+              this.onEntityRemoved(entity);
+              entityManager.removeEntity(entity);
             }
 
             continue;

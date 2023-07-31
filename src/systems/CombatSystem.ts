@@ -167,14 +167,8 @@ export class CombatSystem extends System {
           }
 
           if (targetAnimationComponent) {
-            targetAnimationComponent.currentFrameIndex = 0;
             targetAnimationComponent.playAnimation("death");
           }
-
-          target.removeComponent("InventoryComponent");
-          target.removeComponent("AIComponent");
-          target.removeComponent("MovementComponent");
-          target.removeComponent("CombatComponent");
         }
       }
     }

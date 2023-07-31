@@ -20,13 +20,10 @@ export async function loadItems(): Promise<Map<string, ItemComponent>> {
 
   const itemComponents = new Map<string, ItemComponent>();
   for (const itemData of items) {
-    const spriteData = SpriteSheetParser.getSprite("items", "all-items", itemData.row, itemData.col);
-    if (spriteData) {
-      const itemComponent = new ItemComponent(itemData.name, itemData.description, spriteData);
-      itemComponents.set(itemData.name, itemComponent);
-    } else {
-      throw new Error(`Sprite data not found for item: ${itemData.name}`);
-    }
+    const spriteData = await SpriteSheetParser.getSprite("items", "all-items", itemData.row, itemData.col);
+    if (!spriteData) throw new Error(`Sprite data not found for item: ${itemData.name}`);
+    const itemComponent = new ItemComponent(itemData.name, itemData.description, spriteData);
+    itemComponents.set(itemData.name, itemComponent);
   }
 
   return itemComponents;

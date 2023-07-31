@@ -10,18 +10,20 @@ import { System } from "./System";
 export class AISystem extends System {
   private behaviorTrees: Map<string, BehaviorTree> = new Map();
 
-  constructor(public entityManager: EntityManager) {
+  constructor(public readonly entityManager: EntityManager) {
     super();
 
     const aiEntities = entityManager.getEntitiesByComponent("AIComponent");
     const playerEntity = entityManager.getEntitiesByComponent("PlayerComponent")[0];
+
     for (const enemyEntity of aiEntities) {
       const positionComponent = enemyEntity.getComponent<PositionComponent>("PositionComponent");
-      if (!positionComponent) continue;
       const playerPositionComponent = playerEntity.getComponent<PositionComponent>("PositionComponent");
-      if (!playerPositionComponent) continue;
-      const behaviorTree = this.createBehaviorTree(positionComponent.position, playerPositionComponent.position, enemyEntity, playerEntity);
-      this.behaviorTrees.set(enemyEntity.name, behaviorTree);
+
+      if (playerPositionComponent && positionComponent) {
+        const behaviorTree = this.createBehaviorTree(positionComponent.position, playerPositionComponent.position, enemyEntity, playerEntity);
+        this.behaviorTrees.set(enemyEntity.name, behaviorTree);
+      }
     }
   }
 
@@ -30,9 +32,9 @@ export class AISystem extends System {
   }
 
   update(_: number, entityManager: EntityManager) {
-    this.behaviorTrees.forEach((behaviorTree, _) => {
+    for (const behaviorTree of this.behaviorTrees.values()) {
       behaviorTree.tick(entityManager);
-    })
+    }
   }
 
   render() {

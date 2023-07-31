@@ -1,3 +1,5 @@
+import { TileData } from "./LevelInitializer";
+
 export interface PropData {
     name: string;
     size: [number, number];
@@ -10,7 +12,7 @@ export interface PropData {
 export interface LevelData {
     spriteSheets: string[],
     props: PropData[];
-    data: number[][][];
+    data: TileData[][];
 }
 
 export const levelOne: LevelData = {

@@ -80,7 +80,7 @@ export class SpriteSheetParser {
     }
   }
 
-  public static getSprite(entityId: string, spriteSheetName: string, row: number, col: number): SpriteData | undefined {
+  public static async getSprite(entityId: string, spriteSheetName: string, row: number, col: number): Promise<SpriteData | undefined> {
     const entitySpriteSheets = this.spriteSheets[entityId];
     if (!entitySpriteSheets) return undefined;
 
@@ -90,7 +90,7 @@ export class SpriteSheetParser {
     return sprites[row]?.[col];
   }
 
-  public static getSpriteSheet(entityId: string, spriteSheetName: string): SpriteSheet | undefined {
+  public static async getSpriteSheet(entityId: string, spriteSheetName: string): Promise<SpriteSheet | undefined> {
     const entitySpriteSheet = this.spriteSheets[entityId];
     if (!entitySpriteSheet) return undefined;
 
