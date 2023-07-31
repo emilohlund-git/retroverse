@@ -1,8 +1,13 @@
 import { AnimationComponent } from "../components/AnimationComponent";
 import { CombatComponent } from "../components/CombatCompontent";
+import { InteractableComponent } from "../components/InteractableComponent";
 import { InventoryComponent } from "../components/InventoryComponent";
 import { MovementComponent } from "../components/MovementComponent";
+import { PositionComponent } from "../components/PositionComponent";
+import { SolidComponent } from "../components/SolidComponent";
+import { Entity } from "../entities/Entity";
 import { EntityManager } from "../entities/EntityManager";
+import { calculateDistance } from "../utils/math";
 import { System } from "./System";
 
 export class InputSystem extends System {
@@ -19,6 +24,7 @@ export class InputSystem extends System {
   preload() { }
 
   update(deltaTime: number, entityManager: EntityManager) {
+    const interactableEntities = entityManager.getEntitiesByComponent("InteractableComponent");
     const player = entityManager.getEntitiesByComponent("PlayerComponent")[0];
     const movementComponent = player.getComponent<MovementComponent>("MovementComponent");
     if (!movementComponent) return;
@@ -26,6 +32,8 @@ export class InputSystem extends System {
     if (!combatComponent) return;
     const animationComponent = player.getComponent<AnimationComponent>("AnimationComponent");
     if (!animationComponent) return;
+    const positionComponent = player.getComponent<PositionComponent>("PositionComponent");
+    if (!positionComponent) return;
     const inventoryComponent = player.getComponent<InventoryComponent>("InventoryComponent");
 
     if (!player) throw new Error('No player entity assigned.');
@@ -49,8 +57,23 @@ export class InputSystem extends System {
       }
     }
 
+    // Checking for inventory & possible world interactions
     if (inventoryComponent) {
       if (this.pressedKeys.has("E")) {
+        interactableEntities.forEach((i) => {
+          const interactablePosition = i.getComponent<PositionComponent>("PositionComponent")?.position;
+          const solidComponent = i.getComponent<SolidComponent>("SolidComponent");
+          const interactableComponent = i.getComponent<InteractableComponent>("InteractableComponent");
+          if (interactablePosition && solidComponent && interactableComponent && !interactableComponent.interacted) {
+            if (calculateDistance(positionComponent.position, interactablePosition) <= 20) {
+              if (this.areConditionsSatisfied(i, interactableComponent, inventoryComponent, "Key")) {
+                solidComponent.spriteData.y += solidComponent.spriteData.height;
+                interactableComponent.interacted = true;
+              }
+            }
+          }
+        });
+
         inventoryComponent.pickingUp = true;
       } else {
         inventoryComponent.pickingUp = false;
@@ -83,5 +106,26 @@ export class InputSystem extends System {
 
   private handleBlur() {
     this.pressedKeys.clear();
+  }
+
+  private areConditionsSatisfied(interactableEntity: Entity, interactable: InteractableComponent, inventory: InventoryComponent, itemName: string): boolean {
+    for (const condition of interactable.conditions) {
+      if (condition.hasItem) {
+        const conditionSatisfied = condition.hasItem(inventory, itemName);
+
+        const item = inventory.items.find((i) => i.name === itemName);
+
+        if (item) {
+          inventory.removeItem(inventory.items.find((i) => i.name === itemName)!);
+          interactableEntity.removeComponent("CollisionComponent");
+        }
+
+        if (!conditionSatisfied) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 }

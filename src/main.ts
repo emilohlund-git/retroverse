@@ -1,5 +1,6 @@
 import { Game } from "./Game";
 import { CollisionType } from "./components/CollisionComponent";
+import { InteractionConditions } from "./components/InteractableComponent";
 import { EntityManager } from "./entities/EntityManager";
 import { createEnemyEntity } from "./entities/enemyEntity";
 import { createPlayerEntity } from "./entities/playerEntity";
@@ -51,18 +52,27 @@ function createEntitiesFromLevelArray(levelData: any[][], spriteSheets: string[]
 
   for (let i = 0; i < levelData.length; i++) {
     for (let j = 0; j < levelData[i].length; j++) {
-      const [layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
+      const [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
       const spriteSheet = spriteSheets[spriteSheetIndex];
+
+      const spriteData = SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)!;
 
       const tileEntity = EntityFactory.create()
         .position(new Vector2D(i * 8, j * 8))
         .size(8, 8)
         .layer(layer)
-        .solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)!)
+        .solid(spriteData)
         .tiled(true)
 
       if (hasCollision === 1) {
         tileEntity.collision(CollisionType.BOX, -2, -2, 0, 0)
+      }
+
+      if (interactable === 1) {
+        const conditions: InteractionConditions[] = [{
+          hasItem(inventory, item) { return inventory.items.findIndex((i) => i.name === item) !== -1 },
+        }]
+        tileEntity.interactable(conditions);
       }
 
       entitiesToAdd.push(tileEntity.build());

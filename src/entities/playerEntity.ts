@@ -23,7 +23,7 @@ export function createPlayerEntity(entityManager: EntityManager) {
     .position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1))
     .size(32, 32)
     .movement(new Vector2D(0, 0), 1)
-    .collision(CollisionType.BOX, 0, 0, 16, 16)
+    .collision(CollisionType.BOX, 2, 0, 16, 16)
     .player()
     .combat()
     .animations(animations)

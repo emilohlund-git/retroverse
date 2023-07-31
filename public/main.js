@@ -81,7 +81,13 @@
       return this.entities.filter((value) => value.getComponent(componentName) !== void 0);
     }
     getEntitiesByComponents(components) {
-      return this.entities.filter((value) => components.every((c) => value.getComponent(c) !== void 0));
+      const uniqueEntities = /* @__PURE__ */ new Set();
+      this.entities.forEach((entity) => {
+        if (components.every((c) => entity.getComponent(c) !== void 0)) {
+          uniqueEntities.add(entity);
+        }
+      });
+      return Array.from(uniqueEntities);
     }
   };
 
@@ -307,7 +313,7 @@
 
   // src/components/CombatCompontent.ts
   var CombatComponent = class extends Component {
-    constructor(isAttacking = false, attackInitiated = false, isHurt = false, attackRange = 10, attackPower = 15, defense = 4, health = 20, maxHealth = 20, isDead = false, attackCooldown = 0, lastAttackTime = 0) {
+    constructor(isAttacking = false, attackInitiated = false, isHurt = false, attackRange = 10, attackPower = 9, defense = 4, health = 20, maxHealth = 20, isDead = false, attackCooldown = 0, lastAttackTime = 0, knockbackDistance = 10) {
       super();
       this.isAttacking = isAttacking;
       this.attackInitiated = attackInitiated;
@@ -320,6 +326,7 @@
       this.isDead = isDead;
       this.attackCooldown = attackCooldown;
       this.lastAttackTime = lastAttackTime;
+      this.knockbackDistance = knockbackDistance;
     }
   };
 
@@ -361,6 +368,15 @@
       }
       debugSpan.innerHTML += JSON.stringify(toAdd, null, 3);
       this.debugDiv.appendChild(debugSpan);
+    }
+  };
+
+  // src/components/InteractableComponent.ts
+  var InteractableComponent = class extends Component {
+    constructor(interacted = false, conditions = []) {
+      super();
+      this.interacted = interacted;
+      this.conditions = conditions;
     }
   };
 
@@ -480,6 +496,10 @@
       this.entity.addComponent("PositionComponent", new PositionComponent(position));
       return this;
     }
+    interactable(conditions) {
+      this.entity.addComponent("InteractableComponent", new InteractableComponent(false, conditions));
+      return this;
+    }
     prop() {
       this.entity.addComponent("PropComponent", new PropComponent());
       return this;
@@ -497,11 +517,6 @@
     inventory(maxCapacity) {
       const inventoryComponent = new InventoryComponent([], maxCapacity);
       this.entity.addComponent("InventoryComponent", inventoryComponent);
-      return this;
-    }
-    spriteData(spriteData) {
-      const renderComponent = this.ensureRenderComponent();
-      renderComponent.spriteData = spriteData;
       return this;
     }
     tiled(tiled) {
@@ -673,7 +688,7 @@
   animations2.set(playerDeathAnimation.name, playerDeathAnimation);
   var excludedComponents = ["DebugComponent", "PlayerComponent", "CollisionComponent", "RenderComponent", "MovementComponent", "PositionComponent", "AIComponent"];
   function createPlayerEntity(entityManager2) {
-    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 0, 0, 16, 16).player().combat().animations(animations2).layer(2).inventory().debug(entityManager2, excludedComponents).build();
+    const playerEntity = EntityFactory.create().name("player").position(new Vector2D(TILE_WIDTH * 1, TILE_HEIGHT * 1)).size(32, 32).movement(new Vector2D(0, 0), 1).collision("box" /* BOX */, 2, 0, 16, 16).player().combat().animations(animations2).layer(2).inventory().debug(entityManager2, excludedComponents).build();
     entityManager2.addEntity(playerEntity);
   }
 
@@ -686,33 +701,33 @@
     ],
     // [Sprite Sheet Index, Row Index in Sprite Sheet, Column Index in Sprite Sheet]
     data: [
-      [[0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [0, 1, 1, 2, 3], [4, 1, 1, 3, 1], [4, 1, 1, 4, 1]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 1], [3, 1, 1, 2, 1], [3, 1, 1, 2, 1], [3, 1, 1, 3, 1], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 1], [0, 1, 1, 7, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 2, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 0, 1, 6, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [3, 1, 1, 6, 3], [0, 1, 1, 7, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 2, 3], [3, 1, 1, 3, 3], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 2], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 3, 2], [0, 1, 1, 4, 3], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [4, 1, 1, 3, 2], [4, 1, 1, 4, 2]],
-      [[0, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 2, 3], [4, 1, 1, 3, 3], [4, 1, 1, 4, 3]]
+      [[0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 3, 1], [0, 4, 1, 1, 4, 1]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 2, 1], [0, 3, 1, 1, 3, 1], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 1, 1, 6, 1], [0, 0, 1, 1, 7, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [1, 0, 1, 2, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 0, 1, 6, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 3, 1, 1, 6, 3], [0, 0, 1, 1, 7, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 2, 3], [0, 3, 1, 1, 3, 3], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 1], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 2], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 3, 2], [0, 0, 1, 1, 4, 3], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 4, 1, 1, 3, 2], [0, 4, 1, 1, 4, 2]],
+      [[0, 0, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 2, 3], [0, 4, 1, 1, 3, 3], [0, 4, 1, 1, 4, 3]]
     ]
   };
 
@@ -749,6 +764,11 @@
   // src/utils/math.ts
   var clamp = (number, min, max) => {
     return Math.max(min, Math.min(number, max));
+  };
+  var calculateDistance = (pos1, pos2) => {
+    const dx = pos1.x - pos2.x;
+    const dy = pos1.y - pos2.y;
+    return Math.sqrt(dx * dx + dy * dy);
   };
 
   // src/ai/ChasePlayer.ts
@@ -946,7 +966,7 @@
           const frameIndexIncrement = Math.floor(animationComponent.currentAnimationTime / frameDuration);
           const totalFrames = animation.frames.length;
           if (!animation.loop) {
-            if (animationComponent.currentFrameIndex + frameIndexIncrement >= totalFrames - 1) {
+            if (animationComponent.currentFrameIndex >= totalFrames - 1) {
               animationComponent.state = 1 /* Finished */;
               if (combatComponent) {
                 if (combatComponent.isHurt) {
@@ -1103,6 +1123,7 @@
   var CombatSystem = class extends System {
     constructor() {
       super();
+      this.attackCooldownIntervals = /* @__PURE__ */ new Map();
     }
     preload() {
     }
@@ -1112,6 +1133,9 @@
         const attackerCombat = attacker.getComponent("CombatComponent");
         if (!attackerCombat)
           continue;
+        if (this.attackCooldownIntervals.has(attacker)) {
+          continue;
+        }
         const attackerPosition = attacker.getComponent("PositionComponent")?.position;
         if (!attackerPosition)
           continue;
@@ -1119,42 +1143,19 @@
         const attackerMovement = attacker.getComponent("MovementComponent");
         if (!attackerMovement)
           continue;
-        const cooldownInterval = setInterval(() => {
-          if (attackerCombat.attackCooldown > 0) {
-            attackerCombat.attackCooldown--;
-          } else {
-            clearInterval(cooldownInterval);
-            attackerCombat.attackInitiated = false;
-            attackerCombat.isAttacking = false;
-          }
-        }, 1e3);
-        if (!attackerCombat || !attackerCombat.isAttacking || !attackerAnimation || attackerCombat.attackCooldown > 0) {
+        if (!attackerCombat.isAttacking)
           continue;
-        }
-        attackerCombat.attackCooldown = 100;
-        let closestTarget = null;
-        let closestDistanceSq = Infinity;
-        for (const potentialTarget of entitiesWithCombat) {
-          if (potentialTarget === attacker)
-            continue;
-          const targetPosition = potentialTarget.getComponent("PositionComponent")?.position;
-          if (!targetPosition)
-            continue;
-          const diffX = targetPosition.x - attackerPosition.x;
-          const diffY = targetPosition.y - attackerPosition.y;
-          const distanceSq = diffX * diffX + diffY * diffY;
-          if (distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
-            const angleToTarget = Math.atan2(targetPosition.y - attackerPosition.y, targetPosition.x - attackerPosition.x);
-            const angleDifference = angleToTarget - attackerMovement.currentFacingAngle;
-            const adjustedAngleDifference = (angleDifference + Math.PI) % (2 * Math.PI) - Math.PI;
-            const allowedAngleDifference = Math.PI / 180 * 45;
-            console.log("Adjusted Angle Difference: " + adjustedAngleDifference, "Allowed Angle Difference: " + allowedAngleDifference, "Angle Difference: " + angleDifference, "Angle To Target: " + angleToTarget);
-            if (Math.abs(adjustedAngleDifference) >= allowedAngleDifference && distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
-              closestTarget = potentialTarget;
-              closestDistanceSq = distanceSq;
-            }
-          }
-        }
+        if (!attackerAnimation)
+          continue;
+        attackerCombat.attackCooldown = 10;
+        this.startAttackCooldownInterval(attackerCombat, attacker);
+        const closestTarget = this.calculateClosestTarget(
+          entitiesWithCombat,
+          attacker,
+          attackerPosition,
+          attackerCombat,
+          attackerMovement
+        );
         if (closestTarget) {
           this.handleAttack(attacker, closestTarget, entityManager2);
         }
@@ -1162,12 +1163,51 @@
     }
     render() {
     }
+    startAttackCooldownInterval(attackerCombat, attacker) {
+      const interval = setInterval(() => {
+        if (attackerCombat.attackCooldown > 0) {
+          attackerCombat.attackCooldown--;
+        } else {
+          attackerCombat.attackInitiated = false;
+          attackerCombat.isAttacking = false;
+          clearInterval(interval);
+          this.attackCooldownIntervals.delete(attacker);
+        }
+      }, 100);
+      this.attackCooldownIntervals.set(attacker, interval);
+      return interval;
+    }
+    calculateClosestTarget(entitiesWithCombat, attacker, attackerPosition, attackerCombat, attackerMovement) {
+      let closestTarget = null;
+      let closestDistanceSq = Infinity;
+      for (const potentialTarget of entitiesWithCombat) {
+        if (potentialTarget === attacker)
+          continue;
+        const targetPosition = potentialTarget.getComponent("PositionComponent")?.position;
+        if (!targetPosition)
+          return null;
+        const diffX = targetPosition.x - attackerPosition.x;
+        const diffY = targetPosition.y - attackerPosition.y;
+        const distanceSq = diffX * diffX + diffY * diffY;
+        if (distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
+          const angleToTarget = Math.atan2(targetPosition.y - attackerPosition.y, targetPosition.x - attackerPosition.x);
+          const angleDifference = angleToTarget - attackerMovement.currentFacingAngle;
+          const adjustedAngleDifference = (angleDifference + Math.PI) % (2 * Math.PI) - Math.PI;
+          const allowedAngleDifference = Math.PI / 180 * 45;
+          console.log("Adjusted Angle Difference: " + adjustedAngleDifference, "Allowed Angle Difference: " + allowedAngleDifference, "Angle Difference: " + angleDifference, "Angle To Target: " + angleToTarget);
+          if (Math.abs(adjustedAngleDifference) >= allowedAngleDifference && distanceSq < attackerCombat.attackRange ** 2 && distanceSq < closestDistanceSq) {
+            closestTarget = potentialTarget;
+            closestDistanceSq = distanceSq;
+          }
+        }
+      }
+      return closestTarget;
+    }
     handleAttack(attacker, target, entityManager2) {
       const attackerCombat = attacker.getComponent("CombatComponent");
       const targetCombat = target.getComponent("CombatComponent");
       const targetAnimationComponent = target.getComponent("AnimationComponent");
       const targetInventoryComponent = target.getComponent("InventoryComponent");
-      const attackerInventoryComponent = attacker.getComponent("InventoryComponent");
       const targetPositionComponent = target.getComponent("PositionComponent");
       const world = entityManager2.getEntityByName("world-inventory");
       const worldInventory2 = world?.getComponent("InventoryComponent");
@@ -1219,6 +1259,7 @@
     preload() {
     }
     update(deltaTime, entityManager2) {
+      const interactableEntities = entityManager2.getEntitiesByComponent("InteractableComponent");
       const player = entityManager2.getEntitiesByComponent("PlayerComponent")[0];
       const movementComponent = player.getComponent("MovementComponent");
       if (!movementComponent)
@@ -1228,6 +1269,9 @@
         return;
       const animationComponent = player.getComponent("AnimationComponent");
       if (!animationComponent)
+        return;
+      const positionComponent = player.getComponent("PositionComponent");
+      if (!positionComponent)
         return;
       const inventoryComponent = player.getComponent("InventoryComponent");
       if (!player)
@@ -1252,6 +1296,19 @@
       }
       if (inventoryComponent) {
         if (this.pressedKeys.has("E")) {
+          interactableEntities.forEach((i) => {
+            const interactablePosition = i.getComponent("PositionComponent")?.position;
+            const solidComponent = i.getComponent("SolidComponent");
+            const interactableComponent = i.getComponent("InteractableComponent");
+            if (interactablePosition && solidComponent && interactableComponent && !interactableComponent.interacted) {
+              if (calculateDistance(positionComponent.position, interactablePosition) <= 20) {
+                if (this.areConditionsSatisfied(i, interactableComponent, inventoryComponent, "Key")) {
+                  solidComponent.spriteData.y += solidComponent.spriteData.height;
+                  interactableComponent.interacted = true;
+                }
+              }
+            }
+          });
           inventoryComponent.pickingUp = true;
         } else {
           inventoryComponent.pickingUp = false;
@@ -1279,6 +1336,22 @@
     }
     handleBlur() {
       this.pressedKeys.clear();
+    }
+    areConditionsSatisfied(interactableEntity, interactable, inventory, itemName) {
+      for (const condition of interactable.conditions) {
+        if (condition.hasItem) {
+          const conditionSatisfied = condition.hasItem(inventory, itemName);
+          const item = inventory.items.find((i) => i.name === itemName);
+          if (item) {
+            inventory.removeItem(inventory.items.find((i) => i.name === itemName));
+            interactableEntity.removeComponent("CollisionComponent");
+          }
+          if (!conditionSatisfied) {
+            return false;
+          }
+        }
+      }
+      return true;
     }
   };
 
@@ -1768,11 +1841,20 @@
     const entitiesToAdd = [];
     for (let i = 0; i < levelData.length; i++) {
       for (let j = 0; j < levelData[i].length; j++) {
-        const [layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
+        const [interactable, layer, hasCollision, spriteSheetIndex, spriteRow, spriteColumn] = levelData[i][j];
         const spriteSheet = spriteSheets[spriteSheetIndex];
-        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(layer).solid(SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn)).tiled(true);
+        const spriteData = SpriteSheetParser.getSprite("dungeon-tiles", spriteSheet, spriteRow, spriteColumn);
+        const tileEntity = EntityFactory.create().position(new Vector2D(i * 8, j * 8)).size(8, 8).layer(layer).solid(spriteData).tiled(true);
         if (hasCollision === 1) {
           tileEntity.collision("box" /* BOX */, -2, -2, 0, 0);
+        }
+        if (interactable === 1) {
+          const conditions = [{
+            hasItem(inventory, item) {
+              return inventory.items.findIndex((i2) => i2.name === item) !== -1;
+            }
+          }];
+          tileEntity.interactable(conditions);
         }
         entitiesToAdd.push(tileEntity.build());
       }

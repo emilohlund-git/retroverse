@@ -20,6 +20,14 @@ export class EntityManager {
   }
 
   public getEntitiesByComponents(components: string[]): Entity[] {
-    return this.entities.filter((value) => components.every((c) => value.getComponent(c) !== undefined));
+    const uniqueEntities: Set<Entity> = new Set();
+
+    this.entities.forEach((entity) => {
+      if (components.every((c) => entity.getComponent(c) !== undefined)) {
+        uniqueEntities.add(entity);
+      }
+    });
+
+    return Array.from(uniqueEntities);
   }
 }

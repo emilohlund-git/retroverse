@@ -48,7 +48,7 @@ export class AnimationSystem extends System {
         const totalFrames = animation.frames.length;
 
         if (!animation.loop) {
-          if (animationComponent.currentFrameIndex + frameIndexIncrement >= totalFrames - 1) {
+          if (animationComponent.currentFrameIndex >= totalFrames - 1) {
             animationComponent.state = AnimationState.Finished;
 
             if (combatComponent) {
